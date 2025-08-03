@@ -339,17 +339,279 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 
 **Total Time: 8.5 hours (can be split across multiple days)**
 
+## Phase 2 Implementation Chunks
+
+### Task 1: Database and API Foundation
+
+#### Chunk 1: Database Schema and Models (1.5 hours)
+
+**Input Requirements:**
+- Phase 1 foundation complete (basic Pi setup)
+- Understanding of data model requirements from Phase 2 spec
+- SQLite available on system
+
+**Output Requirements:**
+- SQLite database file created with all required tables
+- Database schema matches specification exactly
+- Basic database operations tested and working
+
+**Files to Create/Modify:**
+- `database/schema.sql` - Database schema definitions
+- `src/models.py` - Python data models/classes for database tables
+- `src/database.py` - Database connection and basic operations
+- `requirements.txt` - Add SQLite dependencies if needed
+
+**Validation Steps:**
+1. Database file creates successfully with `sqlite3 healthtracker.db < database/schema.sql`
+2. All 5 tables exist: `raw_points`, `daily_summaries`, `goals`, `badges`, `sync_log`
+3. Can insert and query test data for each table
+4. Python models can connect to database without errors
+5. Basic CRUD operations work for each table
+
+---
+
+#### Chunk 2: FastAPI Foundation and Health Check (1 hour)
+
+**Input Requirements:**
+- Database schema and models completed
+- Basic understanding of FastAPI framework
+
+**Output Requirements:**
+- FastAPI application starts and responds
+- Health check endpoint working
+- Basic project structure established
+- Static file serving configured
+
+**Files to Create/Modify:**
+- `src/main.py` - FastAPI application entry point
+- `src/api/__init__.py` - API module initialization
+- `src/api/health.py` - Health check endpoints
+- `requirements.txt` - Add FastAPI, uvicorn dependencies
+- `static/` directory - For serving UI files
+
+**Validation Steps:**
+1. `uvicorn src.main:app --reload` starts without errors
+2. `GET /health` returns 200 status with basic system info
+3. `GET /api/health/db` confirms database connectivity
+4. Static files serve correctly from `/static/` path
+5. API responds within 100ms for health checks
+
+---
+
+#### Chunk 3: Data Ingestion API with Security (2 hours)
+
+**Input Requirements:**
+- FastAPI foundation working
+- Database models available
+- Understanding of security requirements (shared secret, IP filtering)
+
+**Output Requirements:**
+- Secure ingestion endpoint accepts JSON health data
+- IP filtering and authentication working
+- Raw data stored in database correctly
+- Error handling and validation in place
+
+**Files to Create/Modify:**
+- `src/api/ingest.py` - Data ingestion endpoints
+- `src/auth.py` - Authentication and IP filtering middleware
+- `src/validators.py` - Data validation schemas
+- `config.py` - Configuration management for secrets and allowed IPs
+- `.env.example` - Environment variable template
+
+**Validation Steps:**
+1. `POST /api/ingest` accepts valid JSON with correct auth header
+2. Request with wrong IP or missing auth header returns 403
+3. Invalid data format returns 400 with clear error message
+4. Valid health data appears in `raw_points` table
+5. Concurrent requests handle gracefully without data corruption
+
+---
+
+### Task 2: Data Processing
+
+#### Chunk 4: Data Normalization Engine (1.5 hours)
+
+**Input Requirements:**
+- Raw data ingestion working
+- Understanding of normalization rules for each metric type
+- Database contains some test raw data
+
+**Output Requirements:**
+- Normalization functions for steps, sleep, HRV, weight
+- Raw data correctly transformed into daily summaries
+- Edge cases handled (missing data, duplicates, invalid values)
+
+**Files to Create/Modify:**
+- `src/normalization.py` - Core normalization functions
+- `src/metrics/__init__.py` - Metrics processing module
+- `src/metrics/steps.py` - Steps-specific logic (sum per day)
+- `src/metrics/sleep.py` - Sleep processing (total minutes, quality)
+- `src/metrics/hrv.py` - HRV processing (nightly rMSSD)
+- `src/metrics/weight.py` - Weight processing (most recent per day)
+
+**Validation Steps:**
+1. Steps raw data sums correctly into daily totals
+2. Sleep data aggregates into nightly totals with quality scores
+3. HRV data extracts nightly values correctly
+4. Weight data selects most recent value per day
+5. Duplicate data doesn't create multiple summaries for same day
+
+---
+
+#### Chunk 5: Daily Summary Computation (1 hour)
+
+**Input Requirements:**
+- Normalization engine completed
+- Raw data available in database
+- Understanding of summary table structure
+
+**Output Requirements:**
+- Automated daily summary generation
+- Moving averages calculated (7-day, 30-day)
+- Trend slopes computed for each metric
+
+**Files to Create/Modify:**
+- `src/summaries.py` - Daily summary computation
+- `src/trends.py` - Moving average and trend calculation
+- `src/api/summaries.py` - API endpoints for summary data
+
+**Validation Steps:**
+1. Daily summaries generate correctly from raw data
+2. 7-day and 30-day moving averages calculate accurately
+3. Trend slopes indicate up/flat/down correctly
+4. Summary API returns data in expected format
+5. Performance: summary generation completes in <5 seconds for 30 days of data
+
+---
+
+#### Chunk 6: Background Job Scheduler (1.5 hours)
+
+**Input Requirements:**
+- Summary computation working
+- Understanding of scheduling requirements (hourly, nightly jobs)
+
+**Output Requirements:**
+- Hourly job for summary updates running
+- Nightly job for database maintenance
+- Job status tracking and error handling
+- Configurable job intervals
+
+**Files to Create/Modify:**
+- `src/scheduler.py` - Background job management
+- `src/jobs/__init__.py` - Jobs module
+- `src/jobs/hourly.py` - Hourly summary updates
+- `src/jobs/nightly.py` - Database cleanup and backup
+- `src/api/jobs.py` - Job status API endpoints
+
+**Validation Steps:**
+1. Hourly job runs automatically and updates summaries
+2. Nightly job performs database VACUUM and creates backup
+3. Job failures log errors but don't crash the system
+4. Job status API shows last run times and success/failure
+5. Jobs can be manually triggered via API for testing
+
+---
+
+### Task 3: User Interface
+
+#### Chunk 7: Basic UI Framework (2 hours)
+
+**Input Requirements:**
+- FastAPI serving static files
+- API endpoints returning data
+- Understanding of UI requirements (Today/Week views)
+
+**Output Requirements:**
+- HTML structure for dashboard with tabs
+- HTMX integration for dynamic content
+- Basic styling for touch-friendly interface
+- Data loading from API working
+
+**Files to Create/Modify:**
+- `static/index.html` - Main dashboard HTML
+- `static/css/styles.css` - Basic styling for 7-inch screen
+- `static/js/dashboard.js` - Alpine.js setup and interactions
+- `static/components/` - Reusable UI components
+- `src/api/ui.py` - UI data endpoints
+
+**Validation Steps:**
+1. Dashboard loads at root URL with tab navigation
+2. Today tab shows placeholder cards for each metric
+3. Week tab shows empty chart containers
+4. Touch interactions work smoothly (tap, swipe)
+5. Data loads from API and populates cards correctly
+
+---
+
+#### Chunk 8: Today View Implementation (1.5 hours)
+
+**Input Requirements:**
+- UI framework established
+- Summary data API working
+- Understanding of Today view requirements
+
+**Output Requirements:**
+- Large metric cards displaying current data
+- Last sync timestamp shown
+- Visual indicators for data freshness
+- Touch-optimized layout
+
+**Files to Create/Modify:**
+- `static/components/metric-card.html` - Metric card component
+- `static/components/today-view.html` - Today view layout
+- `static/css/today.css` - Today view specific styles
+- `static/js/today.js` - Today view interactions
+
+**Validation Steps:**
+1. Today view displays current steps, sleep, HRV, and weight
+2. Cards show large, readable numbers appropriate for 7-inch screen
+3. Last sync time displays and updates correctly
+4. Cards indicate data staleness with visual cues
+5. Touch interactions provide appropriate feedback
+
+---
+
+#### Chunk 9: Week View with Charts (2 hours)
+
+**Input Requirements:**
+- Today view working
+- Chart.js available
+- Weekly summary data from API
+
+**Output Requirements:**
+- Bar chart for steps over 7 days
+- Line charts for weight and HRV with moving averages
+- Charts optimized for touch interaction
+- Responsive design for 7-inch screen
+
+**Files to Create/Modify:**
+- `static/components/week-view.html` - Week view layout
+- `static/js/charts.js` - Chart.js configuration and setup
+- `static/css/charts.css` - Chart styling
+- `src/api/charts.py` - Chart data endpoints
+
+**Validation Steps:**
+1. Steps bar chart displays last 7 days correctly
+2. Weight line chart shows data points with 7-day average overlay
+3. HRV line chart displays with trend indicators
+4. Charts are touch-responsive and readable on 7-inch screen
+5. Chart data updates when new summaries are computed
+
+---
+
+**Total Phase 2 Time: 13.5 hours**
+
 ## Current Status
 
-* **Current Phase:** Phase 1 - Foundation (Moving to Phase 2)
-* **Current Sub-Component:** Pending Phase 2 breakdown
-* **Current Chunk:** None - Awaiting Phase 2 breakdown
-* **Approval Status:** Phase 1 breakdown approved
+* **Current Phase:** Phase 2 - Core Architecture
+* **Current Sub-Component:** Database and API Foundation
+* **Current Chunk:** Chunk 1 - Database Schema and Models
+* **Approval Status:** Phase 2 breakdown approved
 
 ## Approval Gates
 
 * [x] Phase 1 breakdown approved
-* [ ] Phase 2 breakdown approved
+* [x] Phase 2 breakdown approved
 * [ ] Phase 3 breakdown approved
 * [ ] Phase 4 breakdown approved
 
