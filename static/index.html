@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Tracker Dashboard</title>
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+    
+    <!-- External Libraries -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="/static/js/dashboard.js" defer></script>
+</head>
+<body>
+    <!-- Main App Container -->
+    <div id="app" x-data="dashboardData()" x-init="init()">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <h1 class="app-title">Health Tracker</h1>
+            <div class="sync-status" x-data="syncStatus()">
+                <span class="sync-indicator" :class="{'online': isOnline, 'syncing': isSyncing}"></span>
+                <span class="sync-text" x-text="syncText"></span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="tab-navigation">
+            <button 
+                class="tab-button" 
+                :class="{'active': activeTab === 'today'}"
+                @click="switchTab('today')"
+                type="button"
+            >
+                <span class="tab-icon">📊</span>
+                <span class="tab-label">Today</span>
+            </button>
+            
+            <button 
+                class="tab-button" 
+                :class="{'active': activeTab === 'week'}"
+                @click="switchTab('week')"
+                type="button"
+            >
+                <span class="tab-icon">📈</span>
+                <span class="tab-label">Week</span>
+            </button>
+            
+            <button 
+                class="tab-button" 
+                :class="{'active': activeTab === 'month'}"
+                @click="switchTab('month')"
+                type="button"
+            >
+                <span class="tab-icon">📅</span>
+                <span class="tab-label">Month</span>
+            </button>
+            
+            <button 
+                class="tab-button" 
+                :class="{'active': activeTab === 'goals'}"
+                @click="switchTab('goals')"
+                type="button"
+            >
+                <span class="tab-icon">🎯</span>
+                <span class="tab-label">Goals</span>
+            </button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- Today View -->
+            <div 
+                class="tab-content" 
+                x-show="activeTab === 'today'" 
+                x-transition:enter="fade-in"
+                x-transition:leave="fade-out"
+            >
+                <div class="content-header">
+                    <h2>Today's Summary</h2>
+                    <p class="content-date" x-text="todayDate"></p>
+                </div>
+                
+                <!-- Metric Cards Container -->
+                <div 
+                    id="today-metrics" 
+                    class="metric-cards-container"
+                    hx-get="/api/ui/today"
+                    hx-trigger="load, every 30s"
+                    hx-swap="innerHTML"
+                >
+                    <!-- Loading placeholder -->
+                    <div class="loading-card">
+                        <div class="loading-spinner"></div>
+                        <p>Loading today's data...</p>
+                    </div>
+                </div>
+                
+                <!-- Manual Entry Section -->
+                <div class="manual-entry-section">
+                    <h3>Quick Entry</h3>
+                    <div class="manual-entry-buttons">
+                        <button 
+                            class="entry-button hrv-button"
+                            @click="showManualEntry('hrv')"
+                            type="button"
+                        >
+                            <span class="entry-icon">💓</span>
+                            <span class="entry-label">HRV</span>
+                        </button>
+                        
+                        <button 
+                            class="entry-button mood-button"
+                            @click="showManualEntry('mood')"
+                            type="button"
+                        >
+                            <span class="entry-icon">😊</span>
+                            <span class="entry-label">Mood</span>
+                        </button>
+                        
+                        <button 
+                            class="entry-button energy-button"
+                            @click="showManualEntry('energy')"
+                            type="button"
+                        >
+                            <span class="entry-icon">⚡</span>
+                            <span class="entry-label">Energy</span>
+                        </button>
+                        
+                        <button 
+                            class="entry-button notes-button"
+                            @click="showManualEntry('notes')"
+                            type="button"
+                        >
+                            <span class="entry-icon">📝</span>
+                            <span class="entry-label">Notes</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Week View -->
+            <div 
+                class="tab-content" 
+                x-show="activeTab === 'week'" 
+                x-transition:enter="fade-in"
+                x-transition:leave="fade-out"
+            >
+                <div class="content-header">
+                    <h2>This Week</h2>
+                    <p class="content-date" x-text="weekRange"></p>
+                </div>
+                
+                <!-- Charts Container -->
+                <div 
+                    id="week-charts" 
+                    class="charts-container"
+                    hx-get="/api/ui/week"
+                    hx-trigger="load, every 60s"
+                    hx-swap="innerHTML"
+                >
+                    <!-- Loading placeholder -->
+                    <div class="loading-card">
+                        <div class="loading-spinner"></div>
+                        <p>Loading week data...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Month View -->
+            <div 
+                class="tab-content" 
+                x-show="activeTab === 'month'" 
+                x-transition:enter="fade-in"
+                x-transition:leave="fade-out"
+            >
+                <div class="content-header">
+                    <h2>This Month</h2>
+                    <p class="content-date" x-text="monthName"></p>
+                </div>
+                
+                <!-- Monthly Charts Container -->
+                <div 
+                    id="month-charts" 
+                    class="charts-container"
+                    hx-get="/api/ui/month"
+                    hx-trigger="load, every 120s"
+                    hx-swap="innerHTML"
+                >
+                    <!-- Loading placeholder -->
+                    <div class="loading-card">
+                        <div class="loading-spinner"></div>
+                        <p>Loading month data...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Goals View -->
+            <div 
+                class="tab-content" 
+                x-show="activeTab === 'goals'" 
+                x-transition:enter="fade-in"
+                x-transition:leave="fade-out"
+            >
+                <div class="content-header">
+                    <h2>Goals & Progress</h2>
+                    <p class="content-subtitle">Track your health targets</p>
+                </div>
+                
+                <!-- Goals Container -->
+                <div 
+                    id="goals-content" 
+                    class="goals-container"
+                    hx-get="/api/ui/goals"
+                    hx-trigger="load, every 300s"
+                    hx-swap="innerHTML"
+                >
+                    <!-- Loading placeholder -->
+                    <div class="loading-card">
+                        <div class="loading-spinner"></div>
+                        <p>Loading goals...</p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Manual Entry Modal -->
+        <div 
+            class="modal-overlay" 
+            x-show="showModal" 
+            x-transition:enter="modal-enter"
+            x-transition:leave="modal-leave"
+            @click.self="closeModal()"
+        >
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 x-text="modalTitle"></h3>
+                    <button class="modal-close" @click="closeModal()" type="button">×</button>
+                </div>
+                
+                <div class="modal-body">
+                    <!-- Dynamic modal content loaded here -->
+                    <div id="modal-form-content"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <div class="footer-info">
+                <span class="app-version">Health Tracker v1.0</span>
+                <span class="separator">•</span>
+                <span class="device-info" x-text="deviceInfo"></span>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Error Toast -->
+    <div 
+        id="error-toast" 
+        class="toast error-toast" 
+        x-data="{ show: false, message: '' }"
+        x-show="show"
+        x-transition:enter="toast-enter"
+        x-transition:leave="toast-leave"
+        @show-error.window="show = true; message = $event.detail.message; setTimeout(() => show = false, 5000)"
+    >
+        <span class="toast-icon">⚠️</span>
+        <span class="toast-message" x-text="message"></span>
+        <button class="toast-close" @click="show = false" type="button">×</button>
+    </div>
+
+    <!-- Success Toast -->
+    <div 
+        id="success-toast" 
+        class="toast success-toast" 
+        x-data="{ show: false, message: '' }"
+        x-show="show"
+        x-transition:enter="toast-enter"
+        x-transition:leave="toast-leave"
+        @show-success.window="show = true; message = $event.detail.message; setTimeout(() => show = false, 3000)"
+    >
+        <span class="toast-icon">✅</span>
+        <span class="toast-message" x-text="message"></span>
+        <button class="toast-close" @click="show = false" type="button">×</button>
+    </div>
+
+</body>
+</html>

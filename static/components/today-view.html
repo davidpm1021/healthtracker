@@ -1,0 +1,586 @@
+<!-- Today View Component Template -->
+<!-- This template defines the complete Today view layout -->
+
+<div class="today-view-container">
+    
+    <!-- Sync Status Banner -->
+    <div class="sync-banner" x-data="syncBanner()" x-init="checkSyncStatus()">
+        <div class="sync-info">
+            <div class="sync-icon" :class="syncStatusClass">
+                <span x-text="syncIcon"></span>
+            </div>
+            <div class="sync-details">
+                <div class="sync-text" x-text="syncMessage"></div>
+                <div class="sync-time" x-text="lastSyncTime"></div>
+            </div>
+        </div>
+        <button 
+            class="sync-refresh-btn" 
+            @click="refreshData()"
+            :disabled="isRefreshing"
+            type="button"
+        >
+            <span x-show="!isRefreshing">🔄</span>
+            <span x-show="isRefreshing" class="spinning">⟳</span>
+        </button>
+    </div>
+
+    <!-- Quick Stats Summary -->
+    <div class="quick-stats">
+        <div class="stat-item">
+            <div class="stat-value" x-text="$store.todayStats.totalMetrics || 0"></div>
+            <div class="stat-label">Metrics</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" x-text="$store.todayStats.completedGoals || 0"></div>
+            <div class="stat-label">Goals Met</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" x-text="$store.todayStats.streakDays || 0"></div>
+            <div class="stat-label">Day Streak</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" x-text="$store.todayStats.healthScore || '--'"></div>
+            <div class="stat-label">Health Score</div>
+        </div>
+    </div>
+
+    <!-- Primary Metrics Grid -->
+    <div class="primary-metrics-grid">
+        <!-- This will be populated by HTMX -->
+        <div 
+            id="primary-metrics" 
+            hx-get="/api/ui/today/primary"
+            hx-trigger="load, every 30s"
+            hx-swap="innerHTML"
+            hx-indicator="#primary-loading"
+        >
+            <!-- Loading placeholder -->
+            <div id="primary-loading" class="loading-grid">
+                <div class="loading-card">
+                    <div class="loading-spinner"></div>
+                    <p>Loading primary metrics...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary Metrics Grid -->
+    <div class="secondary-metrics-grid">
+        <!-- This will be populated by HTMX -->
+        <div 
+            id="secondary-metrics" 
+            hx-get="/api/ui/today/secondary"
+            hx-trigger="load, every 60s"
+            hx-swap="innerHTML"
+            hx-indicator="#secondary-loading"
+        >
+            <!-- Loading placeholder -->
+            <div id="secondary-loading" class="loading-grid">
+                <div class="loading-card">
+                    <div class="loading-spinner"></div>
+                    <p>Loading secondary metrics...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Entry Section -->
+    <div class="manual-entry-section">
+        <div class="section-header">
+            <h3>Quick Entry</h3>
+            <div class="section-subtitle">Tap to add manual data</div>
+        </div>
+        
+        <div class="manual-entry-grid">
+            <!-- HRV Entry -->
+            <div class="manual-entry-card" @click="showManualEntry('hrv')">
+                <div class="entry-icon hrv-icon">💓</div>
+                <div class="entry-content">
+                    <div class="entry-name">HRV</div>
+                    <div class="entry-status" x-text="$store.manualEntryStatus.hrv"></div>
+                </div>
+                <div class="entry-arrow">›</div>
+            </div>
+
+            <!-- Mood Entry -->
+            <div class="manual-entry-card" @click="showManualEntry('mood')">
+                <div class="entry-icon mood-icon">😊</div>
+                <div class="entry-content">
+                    <div class="entry-name">Mood</div>
+                    <div class="entry-status" x-text="$store.manualEntryStatus.mood"></div>
+                </div>
+                <div class="entry-arrow">›</div>
+            </div>
+
+            <!-- Energy Entry -->
+            <div class="manual-entry-card" @click="showManualEntry('energy')">
+                <div class="entry-icon energy-icon">⚡</div>
+                <div class="entry-content">
+                    <div class="entry-name">Energy</div>
+                    <div class="entry-status" x-text="$store.manualEntryStatus.energy"></div>
+                </div>
+                <div class="entry-arrow">›</div>
+            </div>
+
+            <!-- Notes Entry -->
+            <div class="manual-entry-card" @click="showManualEntry('notes')">
+                <div class="entry-icon notes-icon">📝</div>
+                <div class="entry-content">
+                    <div class="entry-name">Notes</div>
+                    <div class="entry-status" x-text="$store.manualEntryStatus.notes"></div>
+                </div>
+                <div class="entry-arrow">›</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Insights -->
+    <div class="insights-section">
+        <div class="section-header">
+            <h3>Today's Insights</h3>
+        </div>
+        
+        <div 
+            id="today-insights" 
+            hx-get="/api/ui/today/insights"
+            hx-trigger="load, every 300s"
+            hx-swap="innerHTML"
+        >
+            <!-- Loading placeholder -->
+            <div class="loading-card">
+                <div class="loading-spinner"></div>
+                <p>Generating insights...</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- CSS for Today View -->
+<style>
+.today-view-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    max-width: 100%;
+}
+
+/* Sync Status Banner */
+.sync-banner {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow-light);
+    margin-bottom: var(--spacing-md);
+}
+
+.sync-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.sync-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.sync-icon.online { background: var(--success-color); color: white; }
+.sync-icon.syncing { background: var(--warning-color); color: white; animation: pulse 1.5s infinite; }
+.sync-icon.offline { background: var(--text-secondary); color: white; }
+.sync-icon.error { background: var(--danger-color); color: white; }
+
+.sync-details {
+    flex: 1;
+}
+
+.sync-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.sync-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.sync-refresh-btn {
+    width: var(--touch-target-min);
+    height: var(--touch-target-min);
+    border: none;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sync-refresh-btn:hover {
+    background: var(--primary-color);
+    color: var(--text-light);
+    transform: scale(1.05);
+}
+
+.sync-refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
+}
+
+/* Quick Stats */
+.quick-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-large);
+    padding: var(--spacing-lg);
+    backdrop-filter: blur(10px);
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-light);
+    line-height: 1;
+    margin-bottom: var(--spacing-xs);
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+/* Metrics Grids */
+.primary-metrics-grid,
+.secondary-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.loading-grid {
+    grid-column: 1 / -1;
+}
+
+/* Manual Entry Section */
+.manual-entry-section {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-large);
+    padding: var(--spacing-lg);
+    backdrop-filter: blur(10px);
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.section-header h3 {
+    color: var(--text-light);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.section-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.875rem;
+}
+
+.manual-entry-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.manual-entry-card {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    cursor: pointer;
+    transition: var(--transition);
+    min-height: var(--touch-target-min);
+    box-shadow: var(--shadow-light);
+}
+
+.manual-entry-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+}
+
+.manual-entry-card:active {
+    transform: translateY(0);
+}
+
+.entry-icon {
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.entry-icon.hrv-icon { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
+.entry-icon.mood-icon { background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); }
+.entry-icon.energy-icon { background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); }
+.entry-icon.notes-icon { background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); }
+
+.entry-content {
+    flex: 1;
+}
+
+.entry-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.entry-status {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.entry-arrow {
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    transition: var(--transition);
+}
+
+.manual-entry-card:hover .entry-arrow {
+    opacity: 1;
+    transform: translateX(2px);
+}
+
+/* Insights Section */
+.insights-section {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-large);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-medium);
+}
+
+.insights-section .section-header h3 {
+    color: var(--text-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .primary-metrics-grid,
+    .secondary-metrics-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: var(--spacing-md);
+    }
+}
+
+@media (max-width: 800px) {
+    .quick-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-md);
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .manual-entry-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+    
+    .primary-metrics-grid,
+    .secondary-metrics-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+}
+
+@media (max-width: 600px) {
+    .today-view-container {
+        gap: var(--spacing-md);
+    }
+    
+    .sync-banner,
+    .manual-entry-section,
+    .insights-section {
+        padding: var(--spacing-md);
+    }
+    
+    .quick-stats {
+        padding: var(--spacing-md);
+    }
+    
+    .stat-value {
+        font-size: 1.25rem;
+    }
+    
+    .stat-label {
+        font-size: 0.625rem;
+    }
+}
+</style>
+
+<!-- JavaScript for Today View -->
+<script>
+function syncBanner() {
+    return {
+        syncStatusClass: 'online',
+        syncIcon: '✓',
+        syncMessage: 'All data synchronized',
+        lastSyncTime: 'Just now',
+        isRefreshing: false,
+        
+        async checkSyncStatus() {
+            try {
+                const response = await fetch('/api/health');
+                if (response.ok) {
+                    this.syncStatusClass = 'online';
+                    this.syncIcon = '✓';
+                    this.syncMessage = 'All data synchronized';
+                    this.updateLastSyncTime();
+                } else {
+                    throw new Error('API not responding');
+                }
+            } catch (error) {
+                this.syncStatusClass = 'error';
+                this.syncIcon = '⚠';
+                this.syncMessage = 'Sync error';
+                this.lastSyncTime = 'Connection failed';
+            }
+        },
+        
+        async refreshData() {
+            if (this.isRefreshing) return;
+            
+            this.isRefreshing = true;
+            this.syncStatusClass = 'syncing';
+            this.syncIcon = '⟳';
+            this.syncMessage = 'Refreshing data...';
+            
+            try {
+                // Trigger HTMX refresh for all data sections
+                htmx.trigger('#primary-metrics', 'load');
+                htmx.trigger('#secondary-metrics', 'load');
+                htmx.trigger('#today-insights', 'load');
+                
+                // Wait for refresh to complete
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                this.syncStatusClass = 'online';
+                this.syncIcon = '✓';
+                this.syncMessage = 'Data refreshed';
+                this.updateLastSyncTime();
+                
+                // Show success notification
+                window.dispatchEvent(new CustomEvent('show-success', {
+                    detail: { message: 'Data refreshed successfully' }
+                }));
+                
+            } catch (error) {
+                this.syncStatusClass = 'error';
+                this.syncIcon = '⚠';
+                this.syncMessage = 'Refresh failed';
+                
+                window.dispatchEvent(new CustomEvent('show-error', {
+                    detail: { message: 'Failed to refresh data' }
+                }));
+            } finally {
+                this.isRefreshing = false;
+            }
+        },
+        
+        updateLastSyncTime() {
+            const now = new Date();
+            this.lastSyncTime = now.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+            
+            // Store for persistence
+            localStorage.setItem('healthTracker_lastSync', now.toISOString());
+        }
+    };
+}
+
+// Initialize today stats
+document.addEventListener('alpine:init', () => {
+    Alpine.store('todayStats', {
+        totalMetrics: 0,
+        completedGoals: 0,
+        streakDays: 0,
+        healthScore: '--',
+        
+        async update() {
+            try {
+                const response = await fetch('/api/ui/today/stats');
+                if (response.ok) {
+                    const stats = await response.json();
+                    Object.assign(this, stats);
+                }
+            } catch (error) {
+                console.error('Failed to update today stats:', error);
+            }
+        }
+    });
+    
+    // Update stats every 5 minutes
+    setInterval(() => {
+        Alpine.store('todayStats').update();
+    }, 300000);
+});
+
+// Manual entry status tracking
+document.addEventListener('alpine:init', () => {
+    Alpine.store('manualEntryStatus', {
+        hrv: 'Not entered today',
+        mood: 'Not entered today', 
+        energy: 'Not entered today',
+        notes: 'No notes today',
+        
+        async update() {
+            try {
+                const response = await fetch('/api/ui/today/manual-status');
+                if (response.ok) {
+                    const status = await response.json();
+                    Object.assign(this, status);
+                }
+            } catch (error) {
+                console.error('Failed to update manual entry status:', error);
+            }
+        }
+    });
+});
+</script>

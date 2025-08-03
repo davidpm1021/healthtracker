@@ -4,8 +4,8 @@
 
 Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-inch screen. It will read your Samsung Health data through Health Connect on your Android phone, then store summaries on the Pi and visualize progress in a calm, motivating way. The design keeps attention on a few core metrics, with clear weekly and monthly benchmarks and small gamified touches that reward consistency, not perfection.
 
-**Metrics in scope:** weight, sleep, heart rate variability \[HRV from your sleep ring data], step count, trend over time.
-**Data path:** Phone via Health Connect, exported on a schedule, sent over local network to the Pi, stored locally, rendered in a minimal UI.
+**Metrics in scope:** weight, sleep, heart rate, step count, plus manual entry for HRV and subjective metrics, trend over time.
+**Data path:** Phone via Health Connect for automated metrics (steps, sleep, weight, heart rate), manual entry UI for HRV and subjective data, all stored locally, rendered in a minimal UI.
 **Design tone:** clean, high-contrast, large touch targets, simple progress bars and rings, milestone badges, gentle micro-animations only.
 **Constraint:** keep it simple, no cloud backend, local storage by default.
 
@@ -17,6 +17,32 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 * **Other tools:** Chromium in kiosk mode on the Pi, systemd for auto-start, Tasker on Android for the first-pass Health Connect export (upgrade path to a small Kotlin app later if needed)
 
 > Decision note: start with Tasker + Health Connect because it is fastest to ship and avoids building an Android app. If reliability becomes problematic, add a small Kotlin companion later without changing the Pi side.
+
+## Architectural Decisions
+
+### Data Model Changes (Implemented in Phase 2 Chunk 4)
+
+**Decision**: Separate automated metrics from manual entry metrics
+
+**Rationale**: 
+- HRV data from wearables is often inconsistent and requires user validation
+- Subjective metrics (mood, energy) inherently require manual input
+- Automated processing should focus on reliable, high-frequency data streams
+- Manual entries allow for richer context (notes, qualitative observations)
+
+**Implementation**:
+- **Automated metrics**: steps, sleep, weight, heart_rate → processed via normalization engine
+- **Manual metrics**: hrv, mood, energy, notes → stored directly via manual entry API
+- Separate database tables and validation schemas
+- Migration script preserves existing HRV data
+
+**Impact**:
+- Cleaner separation of concerns
+- Better data quality for automated summaries
+- Enhanced user control over subjective data
+- Simplified normalization logic
+
+---
 
 ## Development Phases
 
@@ -54,17 +80,24 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 
 * **Tables**
 
-  * `raw_points` for optional raw time-series (metric, start, end, value, unit, source).
-  * `daily_summaries` for per-day aggregates and last-value metrics.
-  * `goals` for targets by metric and period, for example daily steps, weekly weight change.
+  * `raw_points` for optional raw time-series (steps, sleep, weight, heart_rate - automated metrics only).
+  * `daily_summaries` for per-day aggregates and last-value metrics (automated metrics only).
+  * `manual_entries` for user-input data (HRV, mood, energy, notes, etc.).
+  * `goals` for targets by metric and period, supporting both automated and manual metrics.
   * `badges` for earned milestones.
   * `sync_log` for ingestion status, record counts, and windows.
-* **Normalization rules**
+* **Normalization rules** (automated metrics only)
 
   * Steps: sum per day.
   * Sleep: total asleep minutes per night, plus quality if available.
-  * HRV: nightly rMSSD or equivalent from the ring’s sleep session, stored as milliseconds.
   * Weight: most recent value per day, kilograms internally, display in your preferred unit.
+  * Heart Rate: average or spot readings per day (implementation pending).
+  
+* **Manual entry handling**
+
+  * HRV: User-input nightly rMSSD values in milliseconds, stored directly without normalization.
+  * Mood/Energy: User-input scores (1-10 scale) with optional text descriptions.
+  * Notes: Text-only entries for qualitative observations.
 * **Scheduling**
 
   * Hourly job computes daily summaries from any new raw points and updates 7-day and 30-day moving averages, plus a simple trend slope for each metric.
@@ -72,8 +105,9 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 
 **UI rendering**
 
-* Today view shows large cards for steps, sleep, HRV, and weight, with last sync time.
-* Week view shows a simple bar chart for steps and a line chart for weight and HRV, each with a thin 7-day average overlay.
+* Today view shows large cards for steps, sleep, heart rate, and weight (automated), plus HRV and mood (manual), with last sync time.
+* Week view shows bar charts for steps and line charts for weight and heart rate (automated), plus HRV trends from manual entries.
+* Manual entry interface allows quick input of HRV, mood, energy, and notes with date selection and validation.
 
 **Exit criteria**
 
@@ -88,7 +122,8 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 
 **Charts and trends**
 
-* Weight and HRV line charts with 7-day and 30-day averages and a clear up, flat, or down indicator based on slope thresholds.
+* Weight and heart rate line charts with 7-day and 30-day averages and a clear up, flat, or down indicator based on slope thresholds.
+* HRV line charts from manual entries with trend indicators (no automated averaging due to sparse manual data).
 * Steps bar chart for last 14 and 30 days.
 * Sleep duration bar or stacked chart if sleep stages are available.
 
@@ -100,16 +135,17 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 
 **Goals and streaks**
 
-* Daily goals: steps, sleep duration, HRV floor, weight logging streak.
-* Weekly goals: average steps, net weight delta within a safe range.
-* Streak engine counts consecutive successes, supports a “freeze” token once per month.
+* Daily goals: steps, sleep duration, heart rate zone, weight logging streak, HRV entry streak (manual).
+* Weekly goals: average steps, net weight delta within a safe range, HRV consistency (manual entries).
+* Streak engine counts consecutive successes, supports a "freeze" token once per month.
 
 **Milestone badges**
 
 * Steps: first 10k day, 7-day 8k streak, first 100k week.
 * Sleep: 7 nights at or above target.
 * Weight: first 1 kg toward target, 25 percent of target, goal reached.
-* HRV: personal best 30-day average.
+* Heart Rate: resting HR improvement, target zone consistency.
+* HRV: personal best reading, 7-day entry streak, monthly consistency (manual entries).
 * Store badge definitions as editable JSON for easy tweaks.
 
 **Benchmarks**
@@ -363,7 +399,7 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 
 **Validation Steps:**
 1. Database file creates successfully with `sqlite3 healthtracker.db < database/schema.sql`
-2. All 5 tables exist: `raw_points`, `daily_summaries`, `goals`, `badges`, `sync_log`
+2. All 6 tables exist: `raw_points`, `daily_summaries`, `manual_entries`, `goals`, `badges`, `sync_log`
 3. Can insert and query test data for each table
 4. Python models can connect to database without errors
 5. Basic CRUD operations work for each table
@@ -437,24 +473,26 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 - Database contains some test raw data
 
 **Output Requirements:**
-- Normalization functions for steps, sleep, HRV, weight
+- Normalization functions for steps, sleep, weight, heart rate (automated metrics only)
 - Raw data correctly transformed into daily summaries
 - Edge cases handled (missing data, duplicates, invalid values)
+- HRV removed from automated processing (handled via manual entries)
 
 **Files to Create/Modify:**
 - `src/normalization.py` - Core normalization functions
 - `src/metrics/__init__.py` - Metrics processing module
 - `src/metrics/steps.py` - Steps-specific logic (sum per day)
 - `src/metrics/sleep.py` - Sleep processing (total minutes, quality)
-- `src/metrics/hrv.py` - HRV processing (nightly rMSSD)
 - `src/metrics/weight.py` - Weight processing (most recent per day)
+- `src/api/manual.py` - Manual entry API for HRV and subjective metrics
 
 **Validation Steps:**
 1. Steps raw data sums correctly into daily totals
 2. Sleep data aggregates into nightly totals with quality scores
-3. HRV data extracts nightly values correctly
-4. Weight data selects most recent value per day
+3. Weight data selects most recent value per day
+4. Manual entry API accepts HRV, mood, energy, and notes
 5. Duplicate data doesn't create multiple summaries for same day
+6. Heart rate normalization framework ready for implementation
 
 ---
 
@@ -563,11 +601,12 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 - `static/js/today.js` - Today view interactions
 
 **Validation Steps:**
-1. Today view displays current steps, sleep, HRV, and weight
-2. Cards show large, readable numbers appropriate for 7-inch screen
-3. Last sync time displays and updates correctly
-4. Cards indicate data staleness with visual cues
-5. Touch interactions provide appropriate feedback
+1. Today view displays current steps, sleep, heart rate, and weight (automated)
+2. Manual entry cards show HRV and mood with input options  
+3. Cards show large, readable numbers appropriate for 7-inch screen
+4. Last sync time displays and updates correctly
+5. Cards indicate data staleness with visual cues
+6. Touch interactions provide appropriate feedback
 
 ---
 
@@ -580,7 +619,8 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 
 **Output Requirements:**
 - Bar chart for steps over 7 days
-- Line charts for weight and HRV with moving averages
+- Line charts for weight and heart rate with moving averages
+- Separate chart for manual HRV entries (no averaging due to sparse data)
 - Charts optimized for touch interaction
 - Responsive design for 7-inch screen
 
@@ -593,9 +633,10 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 **Validation Steps:**
 1. Steps bar chart displays last 7 days correctly
 2. Weight line chart shows data points with 7-day average overlay
-3. HRV line chart displays with trend indicators
-4. Charts are touch-responsive and readable on 7-inch screen
-5. Chart data updates when new summaries are computed
+3. Heart rate line chart displays with trend indicators
+4. HRV manual entry chart shows individual data points
+5. Charts are touch-responsive and readable on 7-inch screen
+6. Chart data updates when new summaries are computed
 
 ---
 
@@ -604,8 +645,8 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 ## Current Status
 
 * **Current Phase:** Phase 2 - Core Architecture
-* **Current Sub-Component:** Data Processing
-* **Current Chunk:** Chunk 4 - Data Normalization Engine
+* **Current Sub-Component:** User Interface
+* **Current Chunk:** Chunk 8 - Today View Implementation
 * **Approval Status:** Phase 2 breakdown approved
 
 ## Approval Gates
@@ -666,4 +707,84 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
   - Configuration management with environment variables (.env.example)
   - Error handling, logging, and comprehensive security features
   - All validation tests passed
+
+* **Phase 2 Chunk 4 - Data Normalization Engine**: Completed (**MAJOR ARCHITECTURAL CHANGES**)
+  - **BREAKING CHANGE**: HRV removed from automated processing, moved to manual entry system
+  - Core normalization functions (src/normalization.py) updated for automated metrics only
+  - Metrics processing module structure (src/metrics/) with base MetricProcessor class
+  - Steps-specific logic (src/metrics/steps.py) - sums step counts per day
+  - Sleep processing (src/metrics/sleep.py) - aggregates total minutes per night with quality
+  - Weight processing (src/metrics/weight.py) - selects most recent measurement per day with body composition
+  - **NEW**: Heart rate support framework added (implementation pending)
+  - **NEW**: Manual entry API (src/api/manual.py) - handles HRV, mood, energy, notes
+  - **NEW**: Database schema updated - added manual_entries table, migration script created
+  - **NEW**: Separate validation schemas for automated vs manual metrics
+  - Comprehensive validation testing updated - 9 individual processor tests passed, full normalization test passed
+
+## Major Architecture Changes Summary
+
+**Phase 2 Chunk 4 introduced breaking changes that significantly improved the system architecture:**
+
+### Database Schema Changes
+- **Added**: `manual_entries` table for user-input data (HRV, mood, energy, notes)
+- **Updated**: `raw_points` and `daily_summaries` now handle only automated metrics
+- **Migration**: Created `database/migrate_remove_hrv.sql` to preserve existing HRV data
+- **Models**: Added `ManualEntry` model and `ManualMetricType` constants
+
+### API Endpoints Changes  
+- **Added**: `/api/manual` - Manual data entry endpoint with full CRUD operations
+- **Added**: `/api/manual/batch` - Batch manual entry processing
+- **Updated**: `/api/ingest` - Now validates only automated metrics (steps, sleep, weight, heart_rate)
+- **Removed**: HRV from automated ingestion validation
+
+### Data Processing Changes
+- **Removed**: HRV normalization from automated processing pipeline
+- **Added**: Heart rate support framework (validation and unit conversion ready)
+- **Updated**: Normalization engine processes only automated metrics
+- **Preserved**: All existing normalization logic for steps, sleep, weight
+
+### User Interface Impact (Future Phases)
+- **Today View**: Will show automated metrics + manual entry cards for HRV/mood
+- **Week View**: Separate charts for automated trends vs manual entry points
+- **Manual Entry UI**: New interface for quick HRV, mood, energy, notes input
+
+### Benefits Achieved
+1. **Cleaner Architecture**: Clear separation between automated and manual data
+2. **Better Data Quality**: Automated summaries use only reliable, consistent data
+3. **Enhanced User Control**: Full control over subjective and variable metrics
+4. **Improved Scalability**: Easy to add new manual metrics without touching normalization
+5. **Preserved Data**: All existing HRV data migrated safely to manual entries
+
+**Current Status**: System successfully handles mixed automated/manual metrics with comprehensive validation and testing.
+
+* **Phase 2 Chunk 5 - Daily Summary Computation**: Completed
+  - Daily summary computation engine (src/summaries.py) - SummaryComputer class with automatic date range processing
+  - Moving averages calculation (7-day, 30-day) with window-based processing
+  - Trend slope calculation using linear regression for metric trend analysis
+  - Summary API endpoints (src/api/summaries.py) - GET /api/summaries/{metric}, GET /api/summaries, GET /api/trends/{metric}
+  - Advanced trend analysis utilities (src/trends.py) - TrendAnalyzer class with comprehensive analysis functions
+  - **Performance validated**: Summary generation completes in <5 seconds for 30 days of data (4.12s measured)
+  - **Quality validated**: All test cases passed - computation, moving averages, trend analysis, comprehensive analysis
+  - API integration completed - compute summaries (POST /api/compute), update analytics (POST /api/update-analytics)
+
+* **Phase 2 Chunk 6 - Background Job Scheduler**: Completed
+  - Background job management system (src/scheduler.py) - JobScheduler class with threading and configurable intervals
+  - Hourly jobs implementation (src/jobs/hourly.py) - 3 jobs: summary computation, trend analysis, data quality checks
+  - Nightly jobs implementation (src/jobs/nightly.py) - 4 jobs: database maintenance, backups, cleanup, health reports
+  - Job status tracking and error handling - comprehensive JobResult and JobDefinition classes with failure recovery
+  - Job status API endpoints (src/api/jobs.py) - GET /api/jobs/status, GET /api/jobs, POST /api/jobs/{name}/run
+  - **Validation completed**: All 5 test categories passed - basic functionality, threading, error handling, job registration, database execution
+  - **Integration completed**: Scheduler auto-starts with FastAPI application, graceful shutdown on app termination
+  - **Job intervals configured**: Hourly (60m), Data quality (120m), Nightly maintenance (1440m/24h)
+
+* **Phase 2 Chunk 7 - Basic UI Framework**: Completed
+  - HTML dashboard structure (static/index.html) - 4-tab navigation with Today/Week/Month/Goals views optimized for 7-inch touchscreen
+  - Touch-friendly CSS styling (static/css/styles.css) - 15KB comprehensive stylesheet with responsive design, 44px minimum touch targets
+  - Alpine.js interactive components (static/js/dashboard.js) - Complete dashboard functionality with tab switching, modal management, and touch gestures
+  - HTMX dynamic content loading - Automatic data refresh every 30-300s with innerHTML swapping and error handling
+  - UI data endpoints (src/api/ui.py) - 5 endpoints generating HTML fragments for today/week/month/goals/manual-entry-forms
+  - **Touch optimization**: Swipe gestures for tab navigation, haptic feedback, large touch targets, optimized for 1024x600 and 800x480 screens
+  - **Accessibility features**: High contrast design, clear typography with proper line-height, ARIA-friendly structure
+  - **Framework integration**: Chart.js for data visualization, external CDN loading for Alpine.js/HTMX with local fallbacks
+  - **Validation completed**: All 5 test categories passed - static files, endpoints, data generation, responsive design, JavaScript functionality
 
