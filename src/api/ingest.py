@@ -1,8 +1,8 @@
 """
 Data ingestion endpoints for Health Tracker API.
-Handles secure ingestion of health data from mobile devices.
+Handles ingestion of health data from mobile devices.
 """
-from fastapi import APIRouter, HTTPException, Request, Depends, status
+from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from datetime import datetime
 import logging
@@ -20,7 +20,7 @@ from validators import (
     HealthDataBatch, IngestionResponse, ValidationError,
     validate_health_data_batch, normalize_units
 )
-from auth import require_auth, SecurityError
+# from auth import require_auth, SecurityError  # Authentication removed for local-only setup
 from database import DatabaseManager
 from models import RawPoint, SyncLog, SyncStatus
 from config import get_config
@@ -39,25 +39,24 @@ db_manager = DatabaseManager()
 @router.post("/ingest", response_model=IngestionResponse)
 async def ingest_health_data(
     request: Request,
-    data: HealthDataBatch,
-    auth_context: Dict[str, Any] = Depends(require_auth)
+    data: HealthDataBatch
 ):
     """
     Ingest health data from mobile device.
     
-    Requires:
-    - Valid authentication header
-    - Allowed IP address
-    - Valid JSON payload with health data points
+    Accepts health data without authentication for local-only setup.
     
     Returns:
     - Processing statistics and any errors
     """
     config = get_config()
-    sync_id = f"sync-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{auth_context['client_ip'].replace('.', '')}"
+    
+    # Get client IP for logging (without authentication checks)
+    client_ip = request.client.host if request.client else "unknown"
+    sync_id = f"sync-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{client_ip.replace('.', '')}"
     
     # Log ingestion attempt
-    logger.info(f"Starting data ingestion from {auth_context['client_ip']}, sync_id: {sync_id}")
+    logger.info(f"Starting data ingestion from {client_ip}, sync_id: {sync_id}")
     
     # Initialize counters
     processed_count = 0
@@ -170,13 +169,11 @@ async def ingest_health_data(
 
 
 @router.get("/ingest/status")
-async def get_ingestion_status(
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+async def get_ingestion_status():
     """
     Get recent ingestion status and statistics.
     
-    Requires authentication.
+    No authentication required for local-only setup.
     """
     try:
         db_manager.initialize_database()
@@ -206,24 +203,22 @@ async def get_ingestion_status(
 
 
 @router.post("/ingest/test")
-async def test_ingestion_endpoint(
-    request: Request,
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+async def test_ingestion_endpoint(request: Request):
     """
     Test endpoint to verify ingestion API is working.
     
-    Returns system information and validates authentication.
+    Returns system information for local-only setup.
     """
     config = get_config()
+    client_ip = request.client.host if request.client else "unknown"
     
     return {
         "status": "healthy",
         "message": "Ingestion endpoint is working",
         "timestamp": datetime.now().isoformat(),
         "client_info": {
-            "ip": auth_context["client_ip"],
-            "authenticated": auth_context["authenticated"]
+            "ip": client_ip,
+            "authenticated": False  # No authentication in local-only setup
         },
         "config_info": {
             "max_payload_size": config.max_payload_size,
