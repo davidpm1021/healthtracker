@@ -46,10 +46,26 @@ async def ingest_health_data(
     Accepts health data in multiple formats (Health Connect, Samsung Health, etc.)
     without authentication for local-only setup.
     
-    Supported formats:
-    - {"type": "Steps", "count": 1234, "timestamp": "2024-01-20T10:00:00Z"}
-    - {"type": "com.samsung.health.step_count", "value": 1234, "time": "2024-01-20T10:00:00Z"}
-    - {"metric": "steps", "start_time": "2024-01-01T10:00:00Z", "value": 1500.0, "unit": "steps"}
+    Supported input formats:
+    
+    1. Health Connect Response Format:
+    {
+        "records": [
+            {"type": "Steps", "count": 1234, "timestamp": "2024-01-20T10:00:00Z"}
+        ],
+        "pageToken": "optional_token"
+    }
+    
+    2. Direct Data Points Format:
+    {
+        "data_points": [
+            {"type": "Steps", "count": 1234, "timestamp": "2024-01-20T10:00:00Z"},
+            {"type": "com.samsung.health.step_count", "value": 1234, "time": "2024-01-20T10:00:00Z"},
+            {"metric": "steps", "start_time": "2024-01-01T10:00:00Z", "value": 1500.0, "unit": "steps"}
+        ]
+    }
+    
+    The endpoint automatically detects and handles both formats.
     
     Returns:
     - Processing statistics and any errors
@@ -91,8 +107,24 @@ async def ingest_health_data(
         if not isinstance(raw_data, dict):
             raise ValueError(f"Expected dict, got {type(raw_data)}")
         
+        # Handle Health Connect response format with 'records' array
+        if 'records' in raw_data:
+            logger.info("Detected Health Connect format with 'records' array")
+            # Extract records and wrap in our expected format
+            health_connect_data = {
+                'data_points': raw_data['records'],
+                'sync_info': {
+                    'pageToken': raw_data.get('pageToken'),
+                    'source': 'health_connect',
+                    'original_format': 'health_connect_response'
+                }
+            }
+            raw_data = health_connect_data
+            logger.info(f"Transformed Health Connect response to internal format with {len(raw_data['data_points'])} records")
+        
+        # Standard validation for our expected format
         if 'data_points' not in raw_data:
-            raise ValueError("Missing 'data_points' field in request")
+            raise ValueError("Missing 'data_points' field in request. Expected either 'data_points' array or Health Connect 'records' array.")
         
         if not isinstance(raw_data['data_points'], list):
             raise ValueError("'data_points' must be a list")
@@ -133,21 +165,27 @@ async def ingest_health_data(
         logger.error(f"Raw data that failed: {raw_data}")
         
         # Try to provide helpful error message based on the data
-        if isinstance(raw_data, dict) and 'data_points' in raw_data and raw_data['data_points']:
-            first_point = raw_data['data_points'][0]
-            missing_fields = []
-            
-            if not any(field in first_point for field in ['metric', 'type']):
-                missing_fields.append("metric identifier (need 'metric' or 'type')")
-            if not any(field in first_point for field in ['start_time', 'timestamp', 'time']):
-                missing_fields.append("timestamp (need 'start_time', 'timestamp', or 'time')")
-            if not any(field in first_point for field in ['value', 'count', 'steps']):
-                missing_fields.append("numeric value (need 'value', 'count', or 'steps')")
-            
-            if missing_fields:
-                detail_msg = f"Missing required fields: {', '.join(missing_fields)}. Received fields: {list(first_point.keys())}"
+        if isinstance(raw_data, dict):
+            if 'records' in raw_data:
+                detail_msg = f"Detected Health Connect format but failed to process records: {str(e)}"
+            elif 'data_points' in raw_data and raw_data['data_points']:
+                first_point = raw_data['data_points'][0]
+                missing_fields = []
+                
+                if not any(field in first_point for field in ['metric', 'type']):
+                    missing_fields.append("metric identifier (need 'metric' or 'type')")
+                if not any(field in first_point for field in ['start_time', 'timestamp', 'time']):
+                    missing_fields.append("timestamp (need 'start_time', 'timestamp', or 'time')")
+                if not any(field in first_point for field in ['value', 'count', 'steps']):
+                    missing_fields.append("numeric value (need 'value', 'count', or 'steps')")
+                
+                if missing_fields:
+                    detail_msg = f"Missing required fields: {', '.join(missing_fields)}. Received fields: {list(first_point.keys())}"
+                else:
+                    detail_msg = f"Data format parsing failed: {str(e)}"
             else:
-                detail_msg = f"Data format parsing failed: {str(e)}"
+                available_keys = list(raw_data.keys())
+                detail_msg = f"Expected 'records' (Health Connect) or 'data_points' array. Received keys: {available_keys}. Error: {str(e)}"
         else:
             detail_msg = f"Data format parsing failed: {str(e)}"
         
