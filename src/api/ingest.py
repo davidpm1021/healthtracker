@@ -12,8 +12,9 @@ from typing import Dict, Any
 import asyncio
 
 # Add parent directories to path for imports
-sys.path.append(str(Path(__file__).parent.parent))
-sys.path.append(str(Path(__file__).parent.parent.parent))
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from validators import (
     HealthDataBatch, IngestionResponse, ValidationError,

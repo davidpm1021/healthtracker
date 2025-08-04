@@ -9,7 +9,8 @@ from typing import Optional
 import logging
 
 # Add parent directory to path for config import
-sys.path.append(str(Path(__file__).parent.parent))
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config import get_config
 
 # Set up logging
