@@ -232,32 +232,4 @@ async def test_ingestion_endpoint(
     }
 
 
-# Error handlers
-@router.exception_handler(SecurityError)
-async def security_error_handler(request: Request, exc: SecurityError):
-    """Handle security-related errors."""
-    logger.warning(f"Security error from {request.client.host if request.client else 'unknown'}: {exc.detail}")
-    
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "error": "security_error",
-            "message": exc.detail,
-            "timestamp": datetime.now().isoformat()
-        }
-    )
-
-
-@router.exception_handler(ValueError)
-async def validation_error_handler(request: Request, exc: ValueError):
-    """Handle validation errors."""
-    logger.warning(f"Validation error: {str(exc)}")
-    
-    return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content={
-            "error": "validation_error",
-            "message": str(exc),
-            "timestamp": datetime.now().isoformat()
-        }
-    )
+# Note: Exception handlers should be registered on the main FastAPI app in main.py if needed
