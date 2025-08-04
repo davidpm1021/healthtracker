@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..',
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from validators import (
-    HealthDataBatch, IngestionResponse, ValidationError,
+    HealthDataBatch, FlexibleHealthDataBatch, IngestionResponse, ValidationError,
     validate_health_data_batch, normalize_units
 )
 # from auth import require_auth, SecurityError  # Authentication removed for local-only setup
@@ -39,12 +39,18 @@ db_manager = DatabaseManager()
 @router.post("/ingest", response_model=IngestionResponse)
 async def ingest_health_data(
     request: Request,
-    data: HealthDataBatch
+    data: FlexibleHealthDataBatch
 ):
     """
     Ingest health data from mobile device.
     
-    Accepts health data without authentication for local-only setup.
+    Accepts health data in multiple formats (Health Connect, Samsung Health, etc.)
+    without authentication for local-only setup.
+    
+    Supported formats:
+    - {"type": "Steps", "count": 1234, "timestamp": "2024-01-20T10:00:00Z"}
+    - {"type": "com.samsung.health.step_count", "value": 1234, "time": "2024-01-20T10:00:00Z"}
+    - {"metric": "steps", "start_time": "2024-01-01T10:00:00Z", "value": 1500.0, "unit": "steps"}
     
     Returns:
     - Processing statistics and any errors
@@ -55,8 +61,23 @@ async def ingest_health_data(
     client_ip = request.client.host if request.client else "unknown"
     sync_id = f"sync-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{client_ip.replace('.', '')}"
     
-    # Log ingestion attempt
-    logger.info(f"Starting data ingestion from {client_ip}, sync_id: {sync_id}")
+    # Log ingestion attempt with data format info
+    logger.info(f"Starting flexible data ingestion from {client_ip}, sync_id: {sync_id}")
+    logger.info(f"Received {len(data.data_points)} data points in flexible format")
+    
+    # Convert flexible batch to internal format
+    try:
+        internal_batch = data.to_health_data_batch()
+        logger.info(f"Successfully transformed {len(internal_batch.data_points)} data points to internal format")
+    except Exception as e:
+        logger.error(f"Failed to transform data to internal format: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Data format transformation failed: {str(e)}"
+        )
+    
+    # Use the transformed data for processing
+    data = internal_batch
     
     # Initialize counters
     processed_count = 0
