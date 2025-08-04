@@ -38,8 +38,7 @@ db_manager = DatabaseManager()
 
 @router.post("/ingest", response_model=IngestionResponse)
 async def ingest_health_data(
-    request: Request,
-    data: FlexibleHealthDataBatch
+    request: Request
 ):
     """
     Ingest health data from mobile device.
@@ -61,23 +60,101 @@ async def ingest_health_data(
     client_ip = request.client.host if request.client else "unknown"
     sync_id = f"sync-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{client_ip.replace('.', '')}"
     
-    # Log ingestion attempt with data format info
-    logger.info(f"Starting flexible data ingestion from {client_ip}, sync_id: {sync_id}")
-    logger.info(f"Received {len(data.data_points)} data points in flexible format")
-    
-    # Convert flexible batch to internal format
+    # Get and log the raw incoming data for debugging
     try:
-        internal_batch = data.to_health_data_batch()
-        logger.info(f"Successfully transformed {len(internal_batch.data_points)} data points to internal format")
+        # Get raw request body for debugging
+        body = await request.body()
+        body_str = body.decode('utf-8')
+        logger.info(f"Raw request body from {client_ip}: {body_str}")
+        
+        # Parse JSON from the body
+        import json
+        raw_data = json.loads(body_str)
+        
     except Exception as e:
-        logger.error(f"Failed to transform data to internal format: {str(e)}")
+        logger.error(f"Failed to parse JSON from request: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Data format transformation failed: {str(e)}"
+            detail=f"Invalid JSON in request body: {str(e)}"
         )
     
-    # Use the transformed data for processing
-    data = internal_batch
+    # Log the parsed data structure
+    logger.info(f"Parsed request data: {raw_data}")
+    logger.info(f"Data type: {type(raw_data)}, Keys: {list(raw_data.keys()) if isinstance(raw_data, dict) else 'Not a dict'}")
+    
+    # Log ingestion attempt with data format info
+    logger.info(f"Starting flexible data ingestion from {client_ip}, sync_id: {sync_id}")
+    
+    # Try to parse as flexible batch
+    try:
+        # Validate the raw data structure
+        if not isinstance(raw_data, dict):
+            raise ValueError(f"Expected dict, got {type(raw_data)}")
+        
+        if 'data_points' not in raw_data:
+            raise ValueError("Missing 'data_points' field in request")
+        
+        if not isinstance(raw_data['data_points'], list):
+            raise ValueError("'data_points' must be a list")
+        
+        if not raw_data['data_points']:
+            raise ValueError("'data_points' cannot be empty")
+        
+        # Log first data point for debugging
+        logger.info(f"First data point structure: {raw_data['data_points'][0]}")
+        
+        # Detect and log the data format
+        first_point = raw_data['data_points'][0]
+        format_info = []
+        
+        # Check what fields are present
+        if 'metric' in first_point: format_info.append("has 'metric'")
+        if 'type' in first_point: format_info.append("has 'type'")
+        if 'start_time' in first_point: format_info.append("has 'start_time'")
+        if 'timestamp' in first_point: format_info.append("has 'timestamp'")
+        if 'time' in first_point: format_info.append("has 'time'")
+        if 'value' in first_point: format_info.append("has 'value'")
+        if 'count' in first_point: format_info.append("has 'count'")
+        if 'steps' in first_point: format_info.append("has 'steps'")
+        if 'unit' in first_point: format_info.append("has 'unit'")
+        
+        logger.info(f"Data point format analysis: {', '.join(format_info)}")
+        
+        # Parse as flexible batch
+        flexible_batch = FlexibleHealthDataBatch(**raw_data)
+        internal_batch = flexible_batch.to_health_data_batch()
+        logger.info(f"Successfully transformed {len(internal_batch.data_points)} data points to internal format")
+        
+        # Use the transformed data for processing
+        data = internal_batch
+        
+    except Exception as e:
+        logger.error(f"Failed to parse flexible data format: {str(e)}")
+        logger.error(f"Raw data that failed: {raw_data}")
+        
+        # Try to provide helpful error message based on the data
+        if isinstance(raw_data, dict) and 'data_points' in raw_data and raw_data['data_points']:
+            first_point = raw_data['data_points'][0]
+            missing_fields = []
+            
+            if not any(field in first_point for field in ['metric', 'type']):
+                missing_fields.append("metric identifier (need 'metric' or 'type')")
+            if not any(field in first_point for field in ['start_time', 'timestamp', 'time']):
+                missing_fields.append("timestamp (need 'start_time', 'timestamp', or 'time')")
+            if not any(field in first_point for field in ['value', 'count', 'steps']):
+                missing_fields.append("numeric value (need 'value', 'count', or 'steps')")
+            
+            if missing_fields:
+                detail_msg = f"Missing required fields: {', '.join(missing_fields)}. Received fields: {list(first_point.keys())}"
+            else:
+                detail_msg = f"Data format parsing failed: {str(e)}"
+        else:
+            detail_msg = f"Data format parsing failed: {str(e)}"
+        
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=detail_msg
+        )
     
     # Initialize counters
     processed_count = 0
