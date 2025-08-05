@@ -9,12 +9,8 @@ from typing import List, Dict, Any, Optional, Tuple, Set
 from collections import defaultdict
 import logging
 
-# Add parent directories to path for imports
-sys.path.append(str(Path(__file__).parent))
-sys.path.append(str(Path(__file__).parent.parent))
-
-from models import RawPoint, DailySummary, MetricType
-from database import DatabaseManager
+from .models import RawPoint, DailySummary, MetricType
+from .database import DatabaseManager
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -169,9 +165,10 @@ def normalize_raw_points_to_summaries(
     for (date_str, metric), points in grouped_points.items():
         try:
             # Import metric-specific processors
-            from metrics.steps import normalize_steps
-            from metrics.sleep import normalize_sleep  
-            from metrics.weight import normalize_weight
+            from .metrics.steps import normalize_steps
+            from .metrics.sleep import normalize_sleep  
+            from .metrics.weight import normalize_weight
+            from .metrics.heart_rate import normalize_heart_rate
             
             # Get existing summary if available
             existing_summary = None
@@ -186,9 +183,7 @@ def normalize_raw_points_to_summaries(
             elif metric == MetricType.WEIGHT:
                 summary = normalize_weight(date_str, points, existing_summary)
             elif metric == MetricType.HEART_RATE:
-                # Heart rate normalization would go here - placeholder for future implementation
-                logger.info(f"Heart rate normalization not yet implemented for {date_str}")
-                continue
+                summary = normalize_heart_rate(date_str, points, existing_summary)
             else:
                 logger.warning(f"Unknown metric type for normalization: {metric}")
                 continue

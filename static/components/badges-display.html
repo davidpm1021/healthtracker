@@ -1,0 +1,509 @@
+<!-- Badges Display Component -->
+<div class="badges-container">
+    <!-- Badge Summary Card -->
+    <div class="badge-summary-card">
+        <div class="badge-summary-header">
+            <h3 class="badge-summary-title">
+                <span class="badge-icon">🏆</span>
+                Achievement Badges
+            </h3>
+            <button id="evaluate-badges-btn" class="badge-action-btn">
+                Check for New Badges
+            </button>
+        </div>
+        
+        <!-- Summary Stats -->
+        <div class="badge-summary-stats">
+            <div class="badge-stat">
+                <div class="badge-stat-value" id="badge-total-earned">0</div>
+                <div class="badge-stat-label">Earned</div>
+            </div>
+            <div class="badge-stat">
+                <div class="badge-stat-value" id="badge-total-available">0</div>
+                <div class="badge-stat-label">Available</div>
+            </div>
+            <div class="badge-stat">
+                <div class="badge-stat-value" id="badge-total-points">0</div>
+                <div class="badge-stat-label">Points</div>
+            </div>
+            <div class="badge-stat">
+                <div class="badge-stat-value" id="badge-completion-percentage">0%</div>
+                <div class="badge-stat-label">Complete</div>
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="badge-progress">
+            <div class="badge-progress-bar-container">
+                <div id="badge-progress-bar" class="badge-progress-bar-fill"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Badges Section -->
+    <div class="recent-badges-section">
+        <h4 class="section-title">Recently Earned</h4>
+        <div id="recent-badges-container" class="recent-badges-list">
+            <!-- Recent badges will be loaded here -->
+        </div>
+    </div>
+    
+    <!-- Next Badges to Earn -->
+    <div class="next-badges-section">
+        <h4 class="section-title">Next to Earn</h4>
+        <div id="next-badges-container" class="next-badges-list">
+            <!-- Next badges will be loaded here -->
+        </div>
+    </div>
+    
+    <!-- Category Progress -->
+    <div class="category-progress-section">
+        <h4 class="section-title">Progress by Category</h4>
+        <div id="category-progress-container" class="category-progress-list">
+            <!-- Category progress will be loaded here -->
+        </div>
+    </div>
+    
+    <!-- All Earned Badges -->
+    <div class="earned-badges-section">
+        <h4 class="section-title">All Earned Badges</h4>
+        <div id="earned-badges-container" class="earned-badges-grid">
+            <!-- Earned badges will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Badge Details Modal -->
+<div id="badge-details-modal" class="modal" style="display: none;">
+    <div class="modal-content badge-modal">
+        <button id="close-badge-modal" class="modal-close">&times;</button>
+        <div class="badge-detail-content">
+            <div class="badge-detail-icon" id="badge-detail-icon">🏆</div>
+            <h3 class="badge-detail-name" id="badge-detail-name">Badge Name</h3>
+            <p class="badge-detail-description" id="badge-detail-description">Badge description</p>
+            <div class="badge-detail-tier" id="badge-detail-tier">Bronze</div>
+            <div id="badge-detail-earned" class="badge-detail-earned">
+                <span>Earned on: </span>
+                <span id="badge-detail-earned-date">Date</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Badge Display Styles */
+.badges-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-md);
+}
+
+.badge-summary-card {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.badge-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.badge-summary-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.badge-action-btn {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 44px;
+}
+
+.badge-action-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+.badge-summary-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.badge-stat {
+    text-align: center;
+}
+
+.badge-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.badge-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+}
+
+.badge-progress {
+    margin-top: var(--spacing-md);
+}
+
+.badge-progress-bar-container {
+    height: 8px;
+    background: var(--surface-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.badge-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-hover));
+    transition: width 0.5s ease;
+    border-radius: 4px;
+}
+
+/* Section Styles */
+.recent-badges-section,
+.next-badges-section,
+.category-progress-section,
+.earned-badges-section {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--spacing-md) 0;
+}
+
+/* Recent Badges */
+.recent-badges-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.recent-badge-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm);
+    background: var(--surface-secondary);
+    border-radius: var(--border-radius);
+}
+
+.recent-badge-icon {
+    font-size: 2rem;
+}
+
+.recent-badge-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.recent-badge-date {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Next Badges */
+.next-badges-list {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+.next-badge-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--surface-secondary);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.next-badge-item:hover {
+    background: var(--surface-hover);
+    transform: translateX(2px);
+}
+
+.next-badge-icon {
+    font-size: 2.5rem;
+}
+
+.next-badge-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.next-badge-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.next-badge-tier {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Category Progress */
+.category-progress-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.category-progress-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.category-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.category-stats {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.category-progress-bar {
+    height: 6px;
+    background: var(--surface-secondary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.category-progress-fill {
+    height: 100%;
+    background: var(--accent-color);
+    transition: width 0.3s ease;
+}
+
+/* Earned Badges Grid */
+.earned-badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.badge-tier-section {
+    grid-column: 1 / -1;
+    margin-bottom: var(--spacing-md);
+}
+
+.tier-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.tier-count {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.badge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: var(--spacing-sm);
+}
+
+.badge-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-sm);
+    background: var(--surface-secondary);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.badge-item:hover {
+    background: var(--surface-hover);
+    transform: translateY(-2px);
+}
+
+.badge-item.unearned {
+    opacity: 0.5;
+    filter: grayscale(100%);
+}
+
+.badge-icon {
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+}
+
+.badge-name {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.badge-earned-date {
+    font-size: 0.625rem;
+    color: var(--text-secondary);
+    margin-top: 0.125rem;
+}
+
+/* Tier Colors */
+.bronze-tier {
+    background-color: rgba(205, 127, 50, 0.1);
+    color: #CD7F32;
+}
+
+.silver-tier {
+    background-color: rgba(192, 192, 192, 0.1);
+    color: #C0C0C0;
+}
+
+.gold-tier {
+    background-color: rgba(255, 215, 0, 0.1);
+    color: #FFD700;
+}
+
+.platinum-tier {
+    background-color: rgba(229, 228, 226, 0.1);
+    color: #E5E4E2;
+}
+
+/* Badge Modal */
+.badge-modal {
+    max-width: 400px;
+    text-align: center;
+}
+
+.badge-detail-icon {
+    font-size: 4rem;
+    margin-bottom: var(--spacing-md);
+}
+
+.badge-detail-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.badge-detail-description {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-md);
+}
+
+.badge-detail-tier {
+    display: inline-block;
+    padding: 0.25rem 1rem;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: var(--spacing-md);
+}
+
+.badge-detail-earned {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* Notifications */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification-success {
+    background: #22c55e;
+    color: white;
+}
+
+.notification-info {
+    background: #3b82f6;
+    color: white;
+}
+
+.notification-error {
+    background: #ef4444;
+    color: white;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .badge-summary-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .badge-summary-header {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        align-items: stretch;
+    }
+    
+    .badge-action-btn {
+        width: 100%;
+    }
+}
+
+/* No badges message */
+.no-badges-message {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: var(--spacing-lg);
+}
+</style>

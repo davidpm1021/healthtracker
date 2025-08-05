@@ -1,0 +1,312 @@
+<!-- HRV Manual Entry Component -->
+<div class="hrv-entry-container">
+    <div class="entry-header">
+        <h3>💗 HRV Entry</h3>
+        <p>Enter your Heart Rate Variability reading</p>
+    </div>
+    
+    <form class="hrv-form" onsubmit="submitHRV(event)">
+        <div class="form-group">
+            <label for="hrv-date">Date:</label>
+            <input type="date" id="hrv-date" name="date" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="hrv-value">HRV (milliseconds):</label>
+            <input type="number" id="hrv-value" name="value" min="10" max="200" step="1" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="hrv-notes">Notes (optional):</label>
+            <textarea id="hrv-notes" name="notes" rows="3" placeholder="Sleep quality, stress level, etc..."></textarea>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="submit-btn">Save HRV</button>
+            <button type="button" class="cancel-btn" onclick="clearForm()">Clear</button>
+        </div>
+    </form>
+    
+    <div class="recent-entries">
+        <h4>Recent HRV Entries:</h4>
+        <div id="recent-hrv-list">
+            <!-- Recent entries loaded here -->
+        </div>
+    </div>
+</div>
+
+<style>
+.hrv-entry-container {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.entry-header {
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.entry-header h3 {
+    margin: 0 0 var(--spacing-sm) 0;
+    color: var(--text-primary);
+}
+
+.entry-header p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.hrv-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.form-group label {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.form-group input,
+.form-group textarea {
+    padding: var(--spacing-md);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    background: var(--surface-primary);
+    color: var(--text-primary);
+    min-height: 44px; /* Touch-friendly */
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.submit-btn,
+.cancel-btn {
+    padding: var(--spacing-md);
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    min-height: 48px;
+    transition: all 0.2s ease;
+}
+
+.submit-btn {
+    background: var(--accent-color);
+    color: white;
+}
+
+.submit-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+.cancel-btn {
+    background: var(--surface-secondary);
+    color: var(--text-secondary);
+}
+
+.cancel-btn:hover {
+    background: var(--surface-hover);
+}
+
+.recent-entries {
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.recent-entries h4 {
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#recent-hrv-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.recent-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm);
+    background: var(--surface-secondary);
+    border-radius: var(--border-radius);
+    font-size: 0.875rem;
+}
+
+.entry-date {
+    font-weight: 600;
+}
+
+.entry-value {
+    color: var(--text-secondary);
+}
+
+.success-message,
+.error-message {
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing-md);
+    text-align: center;
+    font-weight: 500;
+}
+
+.success-message {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.error-message {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+</style>
+
+<script>
+// Set today's date by default
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('hrv-date');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+    
+    // Load recent entries
+    loadRecentEntries();
+});
+
+async function submitHRV(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    const hrvData = {
+        date: formData.get('date'),
+        metric: 'hrv',
+        value: parseFloat(formData.get('value')),
+        unit: 'ms',
+        notes: formData.get('notes') || 'Manual entry from Pi touchscreen'
+    };
+    
+    try {
+        const response = await fetch('/api/manual', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(hrvData)
+        });
+        
+        if (response.ok) {
+            showMessage('✅ HRV saved successfully!', 'success');
+            form.reset();
+            // Reset date to today
+            document.getElementById('hrv-date').value = new Date().toISOString().split('T')[0];
+            // Reload recent entries
+            loadRecentEntries();
+        } else {
+            const error = await response.text();
+            showMessage(`❌ Error saving HRV: ${error}`, 'error');
+        }
+    } catch (error) {
+        showMessage(`❌ Network error: ${error.message}`, 'error');
+    }
+}
+
+function clearForm() {
+    const form = document.querySelector('.hrv-form');
+    form.reset();
+    document.getElementById('hrv-date').value = new Date().toISOString().split('T')[0];
+}
+
+function showMessage(message, type) {
+    // Remove existing message
+    const existingMessage = document.querySelector('.success-message, .error-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    // Create new message
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `${type}-message`;
+    messageDiv.textContent = message;
+    
+    // Insert at top of form
+    const container = document.querySelector('.hrv-entry-container');
+    const header = document.querySelector('.entry-header');
+    container.insertBefore(messageDiv, header.nextSibling);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        messageDiv.remove();
+    }, 3000);
+}
+
+async function loadRecentEntries() {
+    try {
+        const response = await fetch('/api/manual?metric=hrv&limit=5');
+        if (response.ok) {
+            const entries = await response.json();
+            const container = document.getElementById('recent-hrv-list');
+            
+            if (entries.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary); font-size: 0.75rem;">No recent entries</p>';
+                return;
+            }
+            
+            container.innerHTML = entries.map(entry => `
+                <div class="recent-entry">
+                    <span class="entry-date">${formatDate(entry.date)}</span>
+                    <span class="entry-value">${entry.value} ms</span>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error loading recent entries:', error);
+    }
+}
+
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const diffDays = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    
+    return date.toLocaleDateString();
+}
+</script>

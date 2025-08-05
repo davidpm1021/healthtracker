@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Tracker Dashboard - Enhanced</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/charts.css">
+    <link rel="stylesheet" href="css/dashboard-goals.css">
+    <link rel="stylesheet" href="css/components/streak-display.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="index.html" class="brand-link">
+                    <span class="brand-icon">📊</span>
+                    <span class="brand-text">Health Tracker</span>
+                </a>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="dashboard-enhanced.html" class="nav-link active">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a href="charts.html" class="nav-link">Charts</a>
+                </li>
+                <li class="nav-item">
+                    <a href="goals.html" class="nav-link">Goals</a>
+                </li>
+                <li class="nav-item">
+                    <a href="manual.html" class="nav-link">Manual Entry</a>
+                </li>
+            </ul>
+            
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Dashboard Header -->
+            <header class="dashboard-header">
+                <div class="header-content">
+                    <h1 class="dashboard-title">Health Dashboard</h1>
+                    <p class="dashboard-subtitle">Track your health metrics and achieve your goals</p>
+                </div>
+                
+                <div class="header-actions">
+                    <div class="sync-status">
+                        <span class="sync-indicator online"></span>
+                        <span class="sync-text">Data up to date</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Quick Actions -->
+            <section class="quick-actions-section">
+                <div id="goals-quick-actions"></div>
+            </section>
+
+            <!-- Main Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Left Column: Metrics and Charts -->
+                <div class="dashboard-column main-column">
+                    <!-- Health Metrics Cards -->
+                    <section class="metrics-section">
+                        <h2 class="section-title">Today's Metrics</h2>
+                        <div class="metrics-grid">
+                            <!-- Existing metric cards will be here -->
+                            <div class="metric-card">
+                                <div class="metric-card-header">
+                                    <h3 class="metric-title">Steps</h3>
+                                    <div class="metric-icon">👟</div>
+                                </div>
+                                <div class="metric-value-section">
+                                    <div class="metric-main-value">8,247</div>
+                                    <div class="metric-subtitle">steps today</div>
+                                </div>
+                                <div class="metric-progress-bar">
+                                    <div class="progress-fill" style="width: 82%"></div>
+                                </div>
+                                <div class="metric-details">
+                                    <div class="metric-detail">
+                                        <span class="detail-label">Goal</span>
+                                        <span class="detail-value">10,000</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="metric-card">
+                                <div class="metric-card-header">
+                                    <h3 class="metric-title">Sleep</h3>
+                                    <div class="metric-icon">😴</div>
+                                </div>
+                                <div class="metric-value-section">
+                                    <div class="metric-main-value">7.5h</div>
+                                    <div class="metric-subtitle">last night</div>
+                                </div>
+                                <div class="metric-progress-bar">
+                                    <div class="progress-fill" style="width: 94%"></div>
+                                </div>
+                                <div class="metric-details">
+                                    <div class="metric-detail">
+                                        <span class="detail-label">Goal</span>
+                                        <span class="detail-value">8h</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="metric-card">
+                                <div class="metric-card-header">
+                                    <h3 class="metric-title">Heart Rate</h3>
+                                    <div class="metric-icon">❤️</div>
+                                </div>
+                                <div class="metric-value-section">
+                                    <div class="metric-main-value">72</div>
+                                    <div class="metric-subtitle">bpm average</div>
+                                </div>
+                                <div class="metric-details">
+                                    <div class="metric-detail">
+                                        <span class="detail-label">Range</span>
+                                        <span class="detail-value">65-85</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Goals Progress Card will be inserted here by JavaScript -->
+                        </div>
+                    </section>
+
+                    <!-- Charts Section -->
+                    <section class="charts-section">
+                        <h2 class="section-title">Weekly Trends</h2>
+                        <div class="charts-grid">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <h3 class="chart-title">Steps This Week</h3>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="steps-chart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <h3 class="chart-title">Sleep Pattern</h3>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="sleep-chart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Right Column: Goals and Streaks -->
+                <div class="dashboard-column sidebar-column">
+                    <!-- Goals Summary Widget -->
+                    <section class="goals-section">
+                        <div id="goals-summary-widget"></div>
+                    </section>
+
+                    <!-- Streaks Overview Widget -->
+                    <section class="streaks-section">
+                        <div id="streaks-overview-widget"></div>
+                    </section>
+
+                    <!-- Recent Activity -->
+                    <section class="activity-section">
+                        <div class="activity-widget">
+                            <div class="widget-header">
+                                <h3 class="widget-title">
+                                    <span class="widget-icon">📈</span>
+                                    Recent Activity
+                                </h3>
+                            </div>
+                            <div class="activity-list">
+                                <div class="activity-item">
+                                    <div class="activity-icon success">✅</div>
+                                    <div class="activity-content">
+                                        <div class="activity-text">Daily steps goal achieved</div>
+                                        <div class="activity-time">2 hours ago</div>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon streak">🔥</div>
+                                    <div class="activity-content">
+                                        <div class="activity-text">7-day streak milestone reached</div>
+                                        <div class="activity-time">Yesterday</div>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <div class="activity-icon info">💤</div>
+                                    <div class="activity-content">
+                                        <div class="activity-text">Sleep quality improved</div>
+                                        <div class="activity-time">2 days ago</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Loading your health data...</div>
+        </div>
+    </div>
+
+    <!-- Styles for the enhanced dashboard -->
+    <style>
+        /* Dashboard Layout */
+        .main-content {
+            padding: var(--space-6) 0;
+            min-height: calc(100vh - 64px);
+            background: var(--surface-muted);
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-6);
+            padding-bottom: var(--space-4);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .dashboard-title {
+            font-size: var(--font-size-3xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .dashboard-subtitle {
+            color: var(--text-secondary);
+            font-size: var(--font-size-lg);
+            margin: var(--space-2) 0 0 0;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-3);
+            background: var(--surface-color);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .sync-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        .sync-text {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            font-weight: var(--font-weight-medium);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: var(--space-6);
+        }
+
+        .dashboard-column {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-6);
+        }
+
+        /* Section Titles */
+        .section-title {
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-semibold);
+            color: var(--text-primary);
+            margin-bottom: var(--space-4);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--primary-color);
+            border-radius: var(--radius-sm);
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-4);
+        }
+
+        .metric-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--space-5);
+            transition: all var(--transition-fast);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .metric-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-3);
+        }
+
+        .metric-title {
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-semibold);
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .metric-icon {
+            font-size: var(--font-size-xl);
+        }
+
+        .metric-main-value {
+            font-size: 2.5rem;
+            font-weight: var(--font-weight-bold);
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .metric-subtitle {
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            margin-top: var(--space-1);
+        }
+
+        .metric-progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--border-light);
+            border-radius: var(--radius-full);
+            margin: var(--space-3) 0;
+            overflow: hidden;
+        }
+
+        .metric-progress-bar .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+            border-radius: var(--radius-full);
+            transition: width var(--transition-base);
+        }
+
+        .metric-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .metric-detail {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-1);
+        }
+
+        .detail-label {
+            font-size: var(--font-size-xs);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .detail-value {
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            color: var(--text-primary);
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: var(--space-4);
+        }
+
+        .chart-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+        }
+
+        .chart-header {
+            margin-bottom: var(--space-4);
+        }
+
+        .chart-title {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+        }
+
+        /* Activity Widget */
+        .activity-widget {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+        }
+
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            padding: var(--space-3);
+            background: var(--surface-muted);
+            border-radius: var(--radius-md);
+        }
+
+        .activity-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-sm);
+            flex-shrink: 0;
+        }
+
+        .activity-icon.success {
+            background: var(--success-light);
+            color: var(--success-dark);
+        }
+
+        .activity-icon.streak {
+            background: var(--warning-light);
+            color: var(--warning-dark);
+        }
+
+        .activity-icon.info {
+            background: var(--info-light);
+            color: var(--info-dark);
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-text {
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            color: var(--text-primary);
+            margin-bottom: var(--space-1);
+        }
+
+        .activity-time {
+            font-size: var(--font-size-xs);
+            color: var(--text-secondary);
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: var(--z-modal);
+            opacity: 0;
+            visibility: hidden;
+            transition: all var(--transition-base);
+        }
+
+        .loading-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto var(--space-4);
+        }
+
+        .loading-text {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-medium);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: var(--space-4) 0;
+            }
+            
+            .dashboard-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: var(--space-3);
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .dashboard-column {
+                gap: var(--space-4);
+            }
+        }
+    </style>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/components/streak-display.js"></script>
+    <script src="js/dashboard-goals.js"></script>
+    
+    <!-- Initialize dashboard -->
+    <script>
+        // Simple chart initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show loading overlay initially
+            const loadingOverlay = document.getElementById('loading-overlay');
+            loadingOverlay.classList.add('show');
+            
+            // Initialize simple charts
+            initializeCharts();
+            
+            // Hide loading overlay after data loads
+            setTimeout(() => {
+                loadingOverlay.classList.remove('show');
+            }, 2000);
+        });
+        
+        function initializeCharts() {
+            // Steps Chart
+            const stepsCtx = document.getElementById('steps-chart');
+            if (stepsCtx) {
+                new Chart(stepsCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        datasets: [{
+                            label: 'Steps',
+                            data: [8200, 9500, 7800, 10200, 8900, 9200, 8247],
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Sleep Chart
+            const sleepCtx = document.getElementById('sleep-chart');
+            if (sleepCtx) {
+                new Chart(sleepCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        datasets: [{
+                            label: 'Sleep Hours',
+                            data: [7.2, 8.1, 6.9, 7.8, 7.5, 8.3, 7.5],
+                            backgroundColor: '#8b5cf6',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 10
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

@@ -9,6 +9,105 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 **Design tone:** clean, high-contrast, large touch targets, simple progress bars and rings, milestone badges, gentle micro-animations only.
 **Constraint:** keep it simple, no cloud backend, local storage by default.
 
+## AI-Assisted Development Workflow
+
+### 🎯 Core Methodology
+This project uses a structured, phase-based development approach with AI (Claude Code) as an implementation partner while maintaining human control over architecture and decisions.
+
+### 📋 Planning Structure
+
+1. **Mind Dump → Structure Pipeline**
+   - Start: Raw brain dump of project idea
+   - Process: Use prompts to convert into structured project plan
+   - Output: Organized phases with clear objectives
+
+2. **Three-Tier Breakdown System**
+   - **Tier 1**: Development Phases (Strategic - Foundation, Architecture, Features, Polish)
+   - **Tier 2**: Sub-components (Tactical - logical chunks within phases)
+   - **Tier 3**: Implementation Chunks (Tasks - 1-2 hour coding tasks)
+
+3. **ProjectPlan.md as Single Source of Truth**
+   - Contains complete project structure
+   - Tracks current status and progress
+   - Gets updated as requirements evolve
+   - Referenced by AI for all implementation work
+
+### 🤖 AI Interaction Patterns
+
+**Chunking Prompts (Planning Phase)**
+- "Looking at this project plan, break down [PHASE NAME] into logical sub-components..."
+- "Take this sub-component and break it into 1-2 hour implementation chunks..."
+
+**Implementation Prompts (Execution Phase)**
+- "Looking at ProjectPlan.md, implement the current chunk listed under 'Current Chunk'. Only create/modify files explicitly listed. Don't touch ProjectPlan.md or other files."
+
+**Status Management Prompts**
+- "Update the 'Current Chunk' to the next chunk in sequence. Only modify Current Status section."
+
+### 🔧 File Management Strategy
+
+**What AI Can Touch**
+- Implementation files: Source code, configs, requirements
+- Specific scope: Only files listed in current chunk
+- Validation: Must complete chunk requirements before moving on
+
+**What AI Cannot Touch**
+- ProjectPlan.md: Human maintains this
+- Files outside current chunk: Strict boundaries
+- Architecture decisions: Human approves major changes
+
+**When to Alter Files**
+- AI implements: Current chunk requirements only
+- Human updates: ProjectPlan.md status, architectural changes
+- Human approves: All chunk completions before progression
+
+### 🚦 Quality Control Gates
+
+**Chunk-Level Gates**
+- All validation steps must pass
+- Human explicitly approves completion
+- Status updated in ProjectPlan.md before next chunk
+
+**Phase-Level Gates**
+- All chunks in phase complete
+- System tested end-to-end
+- Architecture review before next phase
+
+### 💬 AI Prompt Principles
+
+**Scope Limitation (Critical)**
+- Hyper-specific tasks: "Only implement the User model, nothing else"
+- Boundary setting: "Don't touch files X, Y, Z"
+- Single responsibility: One clear objective per chunk
+
+**Context Provision**
+- Reference ProjectPlan.md: AI always knows current context
+- Chunk requirements: Clear input/output specifications
+- Dependencies: What must exist before chunk starts
+
+**Human Oversight**
+- Approval gates: Human decides when to move forward
+- Architecture control: AI suggests, human decides
+- Scope creep prevention: Strict chunk boundaries
+
+### 🔄 Iteration Process
+
+1. Plan phases (human-driven with AI assistance)
+2. Chunk current phase (AI breaks down, human approves)
+3. Implement chunk (AI executes, human validates)
+4. Update status (human moves to next chunk)
+5. Repeat until phase complete
+
+### 🎪 Key Success Factors
+
+- **Small chunks**: 1-2 hours max, easily validated
+- **Clear boundaries**: AI knows exactly what it can/cannot touch
+- **Human control**: Architecture and progression decisions stay human
+- **Single source of truth**: ProjectPlan.md keeps everyone aligned
+- **Validation-driven**: Every chunk must prove it works before progression
+
+*This approach treats AI as a very capable junior developer with strict supervision and clear task boundaries.*
+
 ## Technology Stack
 
 * **Language:** Python 3.11 on the Pi for a tiny local API and scheduler, JavaScript for the browser UI
@@ -174,13 +273,22 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 
 ### Phase 4: Polish & Production
 
-**Goal:** Daily reliability, smooth performance, and a pleasant experience.
+**Goal:** Daily reliability, smooth performance, and live data integration from phone.
+
+**Tasker/Health Connect Integration**
+
+* Configure Tasker HTTP Request with proper authentication headers
+* Set up automated Health Connect data export every 2 hours
+* Configure triggers: on charge, on Wi-Fi connect, scheduled intervals
+* Test and validate Phone → Pi → Dashboard data pipeline
+* Create fallback mechanisms for network issues
+* Document Tasker setup process for reproducibility
 
 **Visual refinement**
 
 * Consistent spacing and typography scale suited to a 7-inch screen.
 * Color-blind-friendly palette.
-* Respect system “reduce motion.”
+* Respect system "reduce motion."
 
 **Performance**
 
@@ -198,9 +306,11 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 * Unit tests for ingestion, aggregation, and badge logic.
 * Golden datasets for trend checks.
 * Troubleshooting guide for exporter issues and network changes.
+* Complete Tasker configuration documentation
 
 **Exit criteria**
 
+* Live data flowing from phone to dashboard reliably
 * No crashes during a full week of daily use.
 * Data stays consistent after reboots and network changes.
 * Clear documentation for setup and recovery.
@@ -644,12 +754,13 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 
 ## Current Status
 
-* **Current Phase:** Phase 2 - Core Architecture  
-* **Current Sub-Component:** DEPLOYMENT & INTEGRATION
-* **Current Chunk:** ✅ COMPLETED - All Phase 2 chunks complete, deployed to GitHub
-* **Next Phase:** Phase 3 - Feature Implementation (Week View with Charts - PENDING)
-* **Approval Status:** Phase 2 breakdown approved and COMPLETED
+* **Current Phase:** Phase 3 - Feature Implementation (PARTIALLY COMPLETE)
+* **Current Sub-Component:** Badges System Implementation
+* **Current Chunk:** Creating Badge Engine and API
+* **Next Chunk:** ADHD-Friendly Features (Focus Mode, Confetti, etc.)
+* **Approval Status:** Phase 2 COMPLETED, Phase 3 IN PROGRESS
 * **Deployment Status:** ✅ Repository deployed to https://github.com/davidpm1021/healthtracker
+* **Data Status:** Mock data generator available - run `python scripts/generate_mock_data.py`
 
 ## Approval Gates
 
@@ -812,23 +923,81 @@ Build a local, touch-friendly dashboard that runs on a Raspberry Pi 5 with a 7-i
 * **Background Jobs**: ✅ Scheduler running (hourly summaries, nightly maintenance)
 * **Dashboard UI**: ✅ Available at http://192.168.86.36:8000/static/index.html
 
-## CURRENT INTEGRATION ISSUE
+## Current Development Status
 
-**🎯 95% COMPLETE - Final Authentication Step Required:**
+**Phase 2 Complete**: Core architecture fully implemented with mock data support
+**Phase 3 Ready**: Can now proceed with feature implementation using mock data
+**Tasker Integration**: Deferred to Phase 4 - Polish & Production
 
-**Issue**: Tasker HTTP requests are receiving 401 Unauthorized
-**Root Cause**: Missing authentication header in Tasker HTTP Request configuration
-**Solution**: Add header `X-Health-Secret: health-tracker-dev-secret-change-me` to Tasker HTTP Request action
+**Mock Data Available:**
+- 30 days of realistic health metrics
+- Automated: steps, sleep, weight, heart rate
+- Manual: HRV, mood, energy entries
+- Run `python scripts/generate_mock_data.py` to populate database
 
-**Working Data Flow:**
-1. ✅ Health Connect → Tasker (step data successfully extracted)
-2. ❌ Tasker → Pi FastAPI (401 error - missing auth header)
-3. ✅ FastAPI → Database (endpoints working when tested with correct headers)
-4. ✅ Database → Dashboard UI (data displays correctly)
+**Next Steps:**
+1. Generate mock data and verify dashboard display
+2. Begin Phase 3: Week View with Charts implementation
+3. Implement goals, streaks, badges, and motivational features
+4. Phase 4 will include Tasker/Health Connect integration
 
-**Next Session Action Items:**
-1. Configure Tasker HTTP Request with authentication header
-2. Test complete Phone → Pi → Dashboard pipeline  
-3. Verify data appears in dashboard within 2 hours of phone sync
-4. Begin Phase 3: Week View with Charts implementation
+## Phase 3 - FEATURE IMPLEMENTATION STATUS
+
+### Completed Components ✅
+
+* **Phase 3 Chunk 9 - Week View with Charts**: Completed
+  - Full week view component (static/components/week-view.html)
+  - Complete Chart.js integration (static/js/charts.js)
+  - Individual chart modules for steps, weight, heart rate, HRV, sleep
+  - Touch-optimized responsive design for 7-inch screen
+  - Chart data API endpoints implemented
+
+* **Goals System**: Completed
+  - Complete REST API (src/api/goals.py) with full CRUD operations
+  - Goals service layer with business logic (src/services/goals_service.py)
+  - Goal models with types, frequencies, and statuses (src/models/goals.py)
+  - Goals UI pages and JavaScript (static/goals.html, static/js/goals.js)
+  - Goal achievement tracking and progress calculation
+
+* **Streaks Engine**: Completed
+  - Streak calculation engine (src/services/streak_engine.py)
+  - Freeze token system (src/services/freeze_tokens.py) - one per month
+  - Streak display components (static/js/components/streak-*.js)
+  - Integration with goals for consecutive success tracking
+
+* **Progress Tracking**: Completed
+  - Progress tracker service (src/services/progress_tracker.py)
+  - Progress API endpoints (src/api/progress.py)
+  - Real-time progress calculation based on current data
+
+### In Progress Components 🚧
+
+* **Badges System**: Partially Implemented
+  - Database table exists with schema
+  - Basic badge methods in database.py
+  - **MISSING**: Badge service layer, badge API, badge definitions JSON, UI integration
+
+### Not Yet Implemented ❌
+
+* **ADHD-Friendly Features**:
+  - Focus Mode toggle (reduces screen to one line per metric)
+  - Accent color customization
+  - Confetti burst animations for goal achievements
+  - Minimal iconography mode
+
+* **Motivational Nudges**:
+  - Morning card: "To stay on track, aim for X steps, bedtime by Y"
+  - Evening card: "You are X steps from today's goal"
+  - Quiet hours and daily mute functionality
+
+* **Settings Management**:
+  - UI for editing goals, units, accent color, Focus Mode default
+  - Data export to CSV functionality
+  - Import backup functionality
+  - Local data wipe option
+
+* **Benchmarks**:
+  - Week over week comparison cards
+  - Month over month comparison cards
+  - Percentage change calculations
 

@@ -1,0 +1,688 @@
+/**
+ * Dashboard Goals Integration Styles - Health Tracker
+ * CSS for goals and streaks widgets on the main dashboard
+ */
+
+/* Goals Summary Widget */
+.goals-summary-widget {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.widget-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.widget-icon {
+    font-size: var(--font-size-xl);
+}
+
+.widget-link {
+    color: var(--primary-color);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.widget-link:hover {
+    background: var(--primary-light);
+    text-decoration: none;
+}
+
+/* Goals Summary Stats */
+.goals-summary-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.summary-stat {
+    text-align: center;
+    padding: var(--space-3);
+    background: var(--surface-muted);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+    transition: all var(--transition-fast);
+}
+
+.summary-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-value {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--primary-color);
+    line-height: 1;
+    margin-bottom: var(--space-1);
+}
+
+.stat-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.stat-total {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+/* Dashboard Goals List */
+.dashboard-goals-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.dashboard-goal-card {
+    background: var(--surface-muted);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.dashboard-goal-card:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary-color);
+    transform: translateX(4px);
+}
+
+.dashboard-goal-card.achieved {
+    border-color: var(--success-color);
+    background: linear-gradient(90deg, var(--surface-muted) 0%, var(--success-light) 100%);
+}
+
+.dashboard-goal-card.achieved::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--success-color);
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.goal-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.goal-icon {
+    font-size: var(--font-size-xl);
+    flex-shrink: 0;
+}
+
+.goal-title {
+    flex: 1;
+    min-width: 0;
+}
+
+.goal-name {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.goal-target {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.goal-status {
+    font-size: var(--font-size-lg);
+    flex-shrink: 0;
+}
+
+.goal-status.achieved {
+    animation: statusPulse 2s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.goal-card-progress {
+    margin-bottom: var(--space-2);
+}
+
+.progress-bar-mini {
+    width: 100%;
+    height: 6px;
+    background: var(--border-light);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: var(--space-2);
+}
+
+.progress-bar-mini .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+    border-radius: var(--radius-full);
+    transition: width var(--transition-base);
+}
+
+.progress-text {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.goal-card-streak {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: var(--warning-light);
+    color: var(--warning-dark);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.streak-flame {
+    animation: flicker 2s ease-in-out infinite alternate;
+}
+
+@keyframes flicker {
+    0% { transform: scale(1) rotate(-1deg); }
+    100% { transform: scale(1.1) rotate(1deg); }
+}
+
+.more-goals-indicator {
+    text-align: center;
+    margin-top: var(--space-2);
+}
+
+.view-more-link {
+    color: var(--primary-color);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--primary-color);
+    transition: all var(--transition-fast);
+}
+
+.view-more-link:hover {
+    background: var(--primary-color);
+    color: white;
+    text-decoration: none;
+}
+
+/* Empty Goals State */
+.empty-goals-state {
+    text-align: center;
+    padding: var(--space-6);
+    background: var(--surface-muted);
+    border-radius: var(--radius-md);
+    border: 2px dashed var(--border-color);
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: var(--space-3);
+    opacity: 0.5;
+}
+
+.empty-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.empty-message {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+    line-height: var(--line-height-relaxed);
+}
+
+.create-goal-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.create-goal-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+/* Streaks Overview Widget */
+.streaks-overview-widget {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.streaks-count {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    min-width: 24px;
+    text-align: center;
+}
+
+.streaks-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.streak-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--surface-muted);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.streak-item:hover {
+    background: var(--surface-hover);
+    border-color: var(--primary-color);
+    transform: translateX(4px);
+}
+
+.streak-flame {
+    font-size: var(--font-size-xl);
+    animation: flicker 2s ease-in-out infinite alternate;
+}
+
+.streak-flame.small { font-size: 1.2rem; }
+.streak-flame.medium { font-size: 1.4rem; }
+.streak-flame.warm { font-size: 1.6rem; }
+.streak-flame.hot { font-size: 1.8rem; }
+.streak-flame.epic { font-size: 2rem; }
+.streak-flame.legendary { 
+    font-size: 2.2rem;
+    filter: drop-shadow(0 0 8px rgba(255, 69, 0, 0.6));
+}
+
+.streak-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.streak-goal {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.streak-count {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+.streak-badge {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.streak-badge.building { background: var(--secondary-light); color: var(--secondary-dark); }
+.streak-badge.good { background: var(--success-light); color: var(--success-dark); }
+.streak-badge.great { background: var(--primary-light); color: var(--primary-dark); }
+.streak-badge.excellent { background: #f3e8ff; color: #8b5cf6; }
+.streak-badge.epic { background: var(--warning-light); color: var(--warning-dark); }
+.streak-badge.legendary { 
+    background: linear-gradient(45deg, var(--error-light), var(--warning-light));
+    color: var(--error-dark);
+    animation: legendaryGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes legendaryGlow {
+    0% { box-shadow: 0 0 4px rgba(239, 68, 68, 0.3); }
+    100% { box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
+}
+
+.no-streaks-message {
+    text-align: center;
+    padding: var(--space-6);
+    color: var(--text-secondary);
+}
+
+.no-streaks-icon {
+    font-size: 2.5rem;
+    opacity: 0.5;
+    margin-bottom: var(--space-3);
+}
+
+.no-streaks-text {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--space-2);
+}
+
+.no-streaks-hint {
+    font-size: var(--font-size-sm);
+}
+
+.view-all-streaks {
+    text-align: center;
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border-light);
+}
+
+/* Quick Actions */
+.goals-quick-actions {
+    display: flex;
+    gap: var(--space-3);
+    margin: var(--space-4) 0;
+}
+
+.quick-action-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-3);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+    color: var(--text-primary);
+}
+
+.quick-action-btn:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+    color: var(--primary-dark);
+    transform: translateY(-2px);
+    text-decoration: none;
+}
+
+.action-icon {
+    font-size: var(--font-size-xl);
+}
+
+.action-text {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+/* Goals Progress Card (integrates with existing metric cards) */
+.goals-progress-card {
+    background: linear-gradient(135deg, var(--surface-color) 0%, var(--primary-light) 100%);
+    border-color: var(--primary-color);
+}
+
+.goals-progress-card .metric-main-value {
+    color: var(--primary-color);
+}
+
+.goals-progress-card .metric-progress-bar {
+    margin: var(--space-3) 0;
+}
+
+.goals-progress-card .metric-progress-bar .progress-fill {
+    background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+}
+
+.metric-actions {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border-light);
+}
+
+.metric-action-btn {
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    background: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.metric-action-btn:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Navigation Badges */
+.nav-badge {
+    background: var(--primary-color);
+    color: white;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    padding: 2px 6px;
+    border-radius: var(--radius-full);
+    margin-left: var(--space-1);
+    min-width: 18px;
+    text-align: center;
+    animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Dashboard Notifications */
+.dashboard-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-popover);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    max-width: 400px;
+    transform: translateX(100%);
+    transition: transform var(--transition-base);
+}
+
+.dashboard-notification.show {
+    transform: translateX(0);
+}
+
+.dashboard-notification.success {
+    background: var(--success-light);
+    color: var(--success-dark);
+    border-left: 4px solid var(--success-color);
+}
+
+.dashboard-notification.error {
+    background: var(--error-light);
+    color: var(--error-dark);
+    border-left: 4px solid var(--error-color);
+}
+
+.dashboard-notification.info {
+    background: var(--info-light);
+    color: var(--info-dark);
+    border-left: 4px solid var(--info-color);
+}
+
+.notification-message {
+    flex: 1;
+    font-weight: var(--font-weight-medium);
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    font-size: var(--font-size-lg);
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    padding: 0;
+    line-height: 1;
+}
+
+.notification-close:hover {
+    opacity: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .goals-summary-stats {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+    }
+    
+    .goals-quick-actions {
+        flex-direction: column;
+    }
+    
+    .quick-action-btn {
+        flex-direction: row;
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .widget-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-2);
+    }
+    
+    .dashboard-goal-card:hover,
+    .streak-item:hover {
+        transform: none;
+    }
+    
+    .dashboard-notification {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .goals-summary-widget,
+    .streaks-overview-widget {
+        padding: var(--space-3);
+    }
+    
+    .dashboard-goal-card,
+    .streak-item {
+        padding: var(--space-3);
+    }
+    
+    .stat-value {
+        font-size: var(--font-size-xl);
+    }
+    
+    .empty-goals-state {
+        padding: var(--space-4);
+    }
+    
+    .empty-icon {
+        font-size: 2rem;
+    }
+}
+
+/* Dark Mode Adjustments */
+@media (prefers-color-scheme: dark) {
+    .goals-progress-card {
+        background: linear-gradient(135deg, var(--surface-color) 0%, var(--primary-dark) 100%);
+    }
+    
+    .dashboard-goal-card.achieved {
+        background: linear-gradient(90deg, var(--surface-color) 0%, var(--success-dark) 100%);
+    }
+    
+    .goal-card-streak {
+        background: var(--warning-dark);
+        color: var(--warning-light);
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .dashboard-goal-card,
+    .streak-item,
+    .quick-action-btn {
+        border-width: 2px;
+    }
+    
+    .progress-bar-mini .progress-fill {
+        border: 1px solid var(--primary-dark);
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .streak-flame,
+    .goal-status.achieved,
+    .nav-badge,
+    .streak-badge.legendary {
+        animation: none;
+    }
+    
+    .dashboard-goal-card:hover,
+    .streak-item:hover,
+    .summary-stat:hover {
+        transform: none;
+    }
+    
+    .dashboard-notification {
+        transition: none;
+    }
+}

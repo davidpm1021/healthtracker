@@ -9,8 +9,6 @@ from typing import List, Dict, Any, Optional, Tuple
 import logging
 import math
 
-# Add parent directories to path for imports
-sys.path.append(str(Path(__file__).parent))
 
 # Set up logging
 logger = logging.getLogger(__name__)

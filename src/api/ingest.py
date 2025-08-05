@@ -6,24 +6,18 @@ from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from datetime import datetime
 import logging
-import sys
-from pathlib import Path
 from typing import Dict, Any
 import asyncio
 
-# Add parent directories to path for imports
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from validators import (
+from ..validators import (
     HealthDataBatch, FlexibleHealthDataBatch, IngestionResponse, ValidationError,
     validate_health_data_batch, normalize_units
 )
-# from auth import require_auth, SecurityError  # Authentication removed for local-only setup
-from database import DatabaseManager
-from models import RawPoint, SyncLog, SyncStatus
-from config import get_config
+# from ..auth import require_auth, SecurityError  # Authentication removed for local-only setup
+from ..database import DatabaseManager
+from ..models import RawPoint, SyncLog, SyncStatus
+from ..config import get_config
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

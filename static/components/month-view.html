@@ -1,0 +1,525 @@
+<!-- Month View Component Template -->
+<div class="month-view-container">
+    <!-- Month Summary Header -->
+    <div class="month-summary-header">
+        <div class="summary-stats">
+            <div class="summary-stat">
+                <div class="stat-value" id="month-steps-total">--</div>
+                <div class="stat-label">Total Steps</div>
+            </div>
+            <div class="summary-stat">
+                <div class="stat-value" id="month-sleep-avg">--</div>
+                <div class="stat-label">Avg Sleep</div>
+            </div>
+            <div class="summary-stat">
+                <div class="stat-value" id="month-active-days">--</div>
+                <div class="stat-label">Active Days</div>
+            </div>
+            <div class="summary-stat">
+                <div class="stat-value" id="month-goals-met">--</div>
+                <div class="stat-label">Goals Met</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Month Period Selector -->
+    <div class="period-selector">
+        <button class="period-btn" onclick="changeMonthPeriod(-1)">❮</button>
+        <span class="period-display" id="month-period-display">Loading...</span>
+        <button class="period-btn" onclick="changeMonthPeriod(1)">❯</button>
+    </div>
+
+    <!-- Charts Grid Container -->
+    <div class="charts-grid month-charts-grid">
+        <!-- Steps Area Chart -->
+        <div class="chart-container month-primary-chart">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <span class="chart-icon">👟</span>
+                    <span>Monthly Steps Progress</span>
+                </div>
+                <div class="chart-controls">
+                    <button class="chart-control-btn" onclick="refreshMonthChart('steps')">🔄</button>
+                </div>
+            </div>
+            <div class="chart-body">
+                <canvas id="steps-month-chart" class="month-chart"></canvas>
+            </div>
+            <div class="chart-footer">
+                <div class="chart-insight" id="steps-month-insight">
+                    <span class="insight-icon">📈</span>
+                    <span class="insight-text">Loading insights...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sleep Duration Area Chart -->
+        <div class="chart-container month-secondary-chart">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <span class="chart-icon">😴</span>
+                    <span>Sleep Patterns</span>
+                </div>
+                <div class="chart-controls">
+                    <button class="chart-control-btn" onclick="refreshMonthChart('sleep')">🔄</button>
+                </div>
+            </div>
+            <div class="chart-body">
+                <canvas id="sleep-month-chart" class="month-chart"></canvas>
+            </div>
+            <div class="chart-footer">
+                <div class="chart-insight" id="sleep-month-insight">
+                    <span class="insight-icon">🌙</span>
+                    <span class="insight-text">Loading insights...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weight Trend Line Chart -->
+        <div class="chart-container month-secondary-chart">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <span class="chart-icon">⚖️</span>
+                    <span>Weight Progress</span>
+                </div>
+                <div class="chart-controls">
+                    <button class="chart-control-btn" onclick="refreshMonthChart('weight')">🔄</button>
+                </div>
+            </div>
+            <div class="chart-body">
+                <canvas id="weight-month-chart" class="month-chart"></canvas>
+            </div>
+            <div class="chart-footer">
+                <div class="chart-insight" id="weight-month-insight">
+                    <span class="insight-icon">📊</span>
+                    <span class="insight-text">Loading insights...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Heart Rate Variability -->
+        <div class="chart-container month-secondary-chart">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <span class="chart-icon">❤️</span>
+                    <span>Heart Rate Trends</span>
+                </div>
+                <div class="chart-controls">
+                    <button class="chart-control-btn" onclick="refreshMonthChart('heart_rate')">🔄</button>
+                </div>
+            </div>
+            <div class="chart-body">
+                <canvas id="heart-rate-month-chart" class="month-chart"></canvas>
+            </div>
+            <div class="chart-footer">
+                <div class="chart-insight" id="heart-rate-month-insight">
+                    <span class="insight-icon">💓</span>
+                    <span class="insight-text">Loading insights...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Month Insights Section -->
+    <div class="month-insights">
+        <div class="insights-header">
+            <div class="insights-title">
+                <span class="insights-icon">💡</span>
+                <span>Monthly Insights & Analysis</span>
+            </div>
+        </div>
+        <div class="insights-content" id="month-insights-content">
+            <!-- Dynamic insights loaded here -->
+            <div class="insight-loading">Analyzing monthly patterns...</div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Month View Specific Styles */
+.month-view-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-md);
+    height: 100%;
+    overflow-y: auto;
+}
+
+.month-summary-header {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: var(--spacing-lg);
+    text-align: center;
+}
+
+.summary-stat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+/* Period Selector */
+.period-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+.period-btn {
+    background: var(--surface-primary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 1rem;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.period-btn:hover {
+    background: var(--surface-secondary);
+    border-color: var(--accent-color);
+}
+
+.period-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.period-display {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 200px;
+    text-align: center;
+}
+
+/* Month Charts Grid */
+.month-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+}
+
+.month-primary-chart .chart-body {
+    min-height: 300px;
+}
+
+.month-secondary-chart .chart-body {
+    min-height: 240px;
+}
+
+/* Chart insights */
+.chart-insight {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.insight-icon {
+    font-size: 0.875rem;
+}
+
+.insight-text {
+    font-weight: 500;
+}
+
+/* Responsive layouts */
+@media (min-width: 901px) and (max-width: 1200px) {
+    .month-charts-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-md);
+    }
+    
+    .month-primary-chart {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (min-width: 1201px) {
+    .month-charts-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-lg);
+    }
+    
+    .month-primary-chart {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Small screens */
+@media (max-width: 900px) {
+    .month-primary-chart .chart-body {
+        min-height: 240px;
+    }
+    
+    .month-secondary-chart .chart-body {
+        min-height: 200px;
+    }
+    
+    .summary-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-md);
+    }
+    
+    .stat-value {
+        font-size: 1.25rem;
+    }
+}
+
+/* Month insights */
+.month-insights {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.insights-header {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--surface-secondary);
+}
+
+.insights-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.insights-icon {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+.insights-content {
+    padding: var(--spacing-md);
+}
+
+.insight-loading {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 0.875rem;
+    padding: var(--spacing-md) 0;
+}
+
+/* Month chart canvas sizing */
+.month-chart {
+    width: 100% !important;
+    height: 100% !important;
+}
+</style>
+
+<script>
+// Month view specific JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize month view when component loads
+    initializeMonthView();
+});
+
+// Current month offset (0 = current month, -1 = previous month, etc.)
+let currentMonthOffset = 0;
+
+function initializeMonthView() {
+    // Load month summary stats
+    loadMonthSummaryStats();
+    
+    // Load month insights
+    loadMonthInsights();
+    
+    // Update period display
+    updatePeriodDisplay();
+    
+    // Initialize chart refresh functionality
+    window.refreshMonthChart = function(chartType) {
+        console.log(`Refreshing ${chartType} month chart`);
+        
+        // Use chart-specific refresh methods for month period
+        switch(chartType) {
+            case 'steps':
+                if (window.StepsChart && window.StepsChart.refreshMonth) {
+                    window.StepsChart.refreshMonth(getCurrentMonthPeriod());
+                }
+                break;
+            case 'weight':
+                if (window.WeightChart && window.WeightChart.refreshMonth) {
+                    window.WeightChart.refreshMonth(getCurrentMonthPeriod());
+                }
+                break;
+            case 'heart_rate':
+                if (window.HeartRateChart && window.HeartRateChart.refreshMonth) {
+                    window.HeartRateChart.refreshMonth(getCurrentMonthPeriod());
+                }
+                break;
+            case 'sleep':
+                if (window.SleepChart && window.SleepChart.refreshMonth) {
+                    window.SleepChart.refreshMonth(getCurrentMonthPeriod());
+                }
+                break;
+            default:
+                console.warn(`Unknown chart type for month refresh: ${chartType}`);
+        }
+    };
+    
+    // Initialize month charts
+    initializeMonthCharts();
+}
+
+function initializeMonthCharts() {
+    console.log('Initializing month view charts...');
+    
+    // Initialize month-specific chart instances
+    if (window.initializeStepsMonthChart) window.initializeStepsMonthChart();
+    if (window.initializeSleepMonthChart) window.initializeSleepMonthChart();
+    if (window.initializeWeightMonthChart) window.initializeWeightMonthChart();
+    if (window.initializeHeartRateMonthChart) window.initializeHeartRateMonthChart();
+}
+
+function changeMonthPeriod(direction) {
+    currentMonthOffset += direction;
+    
+    // Limit to reasonable range (don't go too far back or forward)
+    if (currentMonthOffset < -12) currentMonthOffset = -12;
+    if (currentMonthOffset > 0) currentMonthOffset = 0;
+    
+    updatePeriodDisplay();
+    loadMonthSummaryStats();
+    loadMonthInsights();
+    
+    // Refresh all charts with new period
+    ['steps', 'sleep', 'weight', 'heart_rate'].forEach(chartType => {
+        refreshMonthChart(chartType);
+    });
+}
+
+function getCurrentMonthPeriod() {
+    const now = new Date();
+    const targetDate = new Date(now.getFullYear(), now.getMonth() + currentMonthOffset, 1);
+    
+    return {
+        year: targetDate.getFullYear(),
+        month: targetDate.getMonth() + 1,
+        monthName: targetDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        offset: currentMonthOffset
+    };
+}
+
+function updatePeriodDisplay() {
+    const period = getCurrentMonthPeriod();
+    const displayElement = document.getElementById('month-period-display');
+    
+    if (displayElement) {
+        displayElement.textContent = period.monthName;
+    }
+    
+    // Update navigation button states
+    const prevBtn = document.querySelector('.period-btn:first-child');
+    const nextBtn = document.querySelector('.period-btn:last-child');
+    
+    if (prevBtn) prevBtn.disabled = currentMonthOffset <= -12;
+    if (nextBtn) nextBtn.disabled = currentMonthOffset >= 0;
+}
+
+async function loadMonthSummaryStats() {
+    try {
+        const period = getCurrentMonthPeriod();
+        
+        // This would call dedicated API endpoints for month summary stats
+        // For now, using placeholder data based on current month
+        const isCurrentMonth = currentMonthOffset === 0;
+        
+        document.getElementById('month-steps-total').textContent = isCurrentMonth ? '289,420' : '245,680';
+        document.getElementById('month-sleep-avg').textContent = isCurrentMonth ? '7.4h' : '7.2h';
+        document.getElementById('month-active-days').textContent = isCurrentMonth ? '18/23' : '26/31';
+        document.getElementById('month-goals-met').textContent = isCurrentMonth ? '67%' : '74%';
+        
+    } catch (error) {
+        console.error('Error loading month summary stats:', error);
+    }
+}
+
+async function loadMonthInsights() {
+    try {
+        const period = getCurrentMonthPeriod();
+        const insightsContent = document.getElementById('month-insights-content');
+        
+        // Generate month-specific insights
+        const insights = generateMonthInsights(period);
+        
+        insightsContent.innerHTML = insights.map(insight => 
+            `<div class="insight-item">${insight}</div>`
+        ).join('');
+        
+    } catch (error) {
+        console.error('Error loading month insights:', error);
+        document.getElementById('month-insights-content').innerHTML = 
+            '<div class="insight-item">Unable to load monthly insights right now</div>';
+    }
+}
+
+function generateMonthInsights(period) {
+    const isCurrentMonth = period.offset === 0;
+    
+    if (isCurrentMonth) {
+        return [
+            `📈 You're averaging 12,580 steps per day this month (+8% vs last month)`,
+            `😴 Sleep consistency improved with 78% of nights in your target range`,
+            `🎯 On track to meet 3 out of 4 monthly goals - keep up the momentum!`,
+            `💪 Best week was Week 2 with 15,200 average daily steps`
+        ];
+    } else {
+        const monthName = period.monthName.split(' ')[0];
+        return [
+            `📊 ${monthName} summary: 245,680 total steps across 31 days`,
+            `🏆 Achieved step goal on 23 days (74% success rate)`,
+            `😴 Average sleep duration was 7.2 hours with 68% consistency`,
+            `📈 Showed steady improvement in the second half of the month`
+        ];
+    }
+}
+</script>

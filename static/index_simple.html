@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Metrics Dashboard</title>
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/charts.css">
+    
+    <!-- External Libraries -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    
+    <!-- Custom JavaScript - Only essentials -->
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/charts.js"></script>
+    <script src="/static/js/charts/steps.js"></script>
+    <script src="/static/js/charts/weight.js"></script>
+    <script src="/static/js/charts/heart_rate.js"></script>
+    <script src="/static/js/charts/hrv.js"></script>
+    
+    <!-- Alpine.js (load last) -->
+    <script src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js" defer></script>
+</head>
+<body>
+    <!-- Main App Container -->
+    <div id="app" x-data="dashboardData()" x-init="init()">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <h1 class="app-title">Health Metrics</h1>
+            <div class="sync-status" x-data="syncStatus()">
+                <span class="sync-indicator" :class="{'online': isOnline, 'syncing': isSyncing}"></span>
+                <span class="sync-text" x-text="syncText"></span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs - Only Today and Week -->
+        <nav class="tab-navigation">
+            <button 
+                class="tab-button" 
+                :class="{'active': activeTab === 'today'}"
+                @click="switchTab('today')"
+                type="button"
+            >
+                <span class="tab-icon">📊</span>
+                <span class="tab-label">Today</span>
+            </button>
+            
+            <button 
+                class="tab-button" 
+                :class="{'active': activeTab === 'week'}"
+                @click="switchTab('week')"
+                type="button"
+            >
+                <span class="tab-icon">📈</span>
+                <span class="tab-label">Week</span>
+            </button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- Today View -->
+            <div 
+                class="tab-content" 
+                x-show="activeTab === 'today'" 
+                x-transition:enter="fade-in"
+                x-transition:leave="fade-out"
+            >
+                <div class="content-header">
+                    <h2>Today's Metrics</h2>
+                    <p class="content-date" x-text="todayDate"></p>
+                </div>
+                
+                <!-- Today Metrics -->
+                <div 
+                    id="today-metrics" 
+                    class="metrics-container"
+                    hx-get="/api/ui/today"
+                    hx-trigger="load, every 300s"
+                    hx-swap="innerHTML"
+                >
+                    <div class="loading-card">
+                        <div class="loading-spinner"></div>
+                        <p>Loading today's metrics...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Week View -->
+            <div 
+                class="tab-content" 
+                x-show="activeTab === 'week'" 
+                x-transition:enter="fade-in"
+                x-transition:leave="fade-out"
+                x-init="$watch('activeTab', value => { if (value === 'week') initWeekCharts() })"
+            >
+                <div class="content-header">
+                    <h2>Weekly Trends</h2>
+                    <p class="content-subtitle">Last 7 days</p>
+                </div>
+                
+                <!-- Week Charts Container -->
+                <div 
+                    id="week-content" 
+                    class="week-container"
+                    hx-get="/api/ui/week"
+                    hx-trigger="load, every 300s"
+                    hx-swap="innerHTML"
+                    hx-on::after-swap="window.initWeekCharts()"
+                >
+                    <div class="loading-card">
+                        <div class="loading-spinner"></div>
+                        <p>Loading charts...</p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- Simplified Alpine.js data -->
+    <script>
+        function dashboardData() {
+            return {
+                activeTab: 'today',
+                showModal: false,
+                todayDate: new Date().toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                }),
+                
+                init() {
+                    // Initialize dashboard
+                    console.log('Dashboard initialized');
+                    
+                    // Set up swipe gestures for tab switching
+                    this.setupSwipeGestures();
+                },
+                
+                switchTab(tab) {
+                    this.activeTab = tab;
+                },
+                
+                setupSwipeGestures() {
+                    let touchStartX = 0;
+                    let touchEndX = 0;
+                    
+                    document.addEventListener('touchstart', (e) => {
+                        touchStartX = e.changedTouches[0].screenX;
+                    });
+                    
+                    document.addEventListener('touchend', (e) => {
+                        touchEndX = e.changedTouches[0].screenX;
+                        this.handleSwipe();
+                    });
+                    
+                    this.handleSwipe = () => {
+                        const swipeThreshold = 50;
+                        const diff = touchStartX - touchEndX;
+                        
+                        if (Math.abs(diff) > swipeThreshold) {
+                            if (diff > 0 && this.activeTab === 'today') {
+                                this.switchTab('week');
+                            } else if (diff < 0 && this.activeTab === 'week') {
+                                this.switchTab('today');
+                            }
+                        }
+                    };
+                }
+            };
+        }
+        
+        function syncStatus() {
+            return {
+                isOnline: navigator.onLine,
+                isSyncing: false,
+                lastSync: localStorage.getItem('lastSyncTime') || 'Never',
+                syncText: 'Online',
+                
+                init() {
+                    // Update online status
+                    window.addEventListener('online', () => {
+                        this.isOnline = true;
+                        this.updateSyncText();
+                    });
+                    
+                    window.addEventListener('offline', () => {
+                        this.isOnline = false;
+                        this.updateSyncText();
+                    });
+                    
+                    this.updateSyncText();
+                    
+                    // Check last sync time periodically
+                    setInterval(() => this.updateLastSync(), 60000);
+                },
+                
+                updateSyncText() {
+                    if (!this.isOnline) {
+                        this.syncText = 'Offline';
+                    } else if (this.isSyncing) {
+                        this.syncText = 'Syncing...';
+                    } else {
+                        const lastSyncDate = new Date(this.lastSync);
+                        if (this.lastSync === 'Never' || isNaN(lastSyncDate)) {
+                            this.syncText = 'No data';
+                        } else {
+                            const minutesAgo = Math.floor((new Date() - lastSyncDate) / 60000);
+                            if (minutesAgo < 1) {
+                                this.syncText = 'Just now';
+                            } else if (minutesAgo < 60) {
+                                this.syncText = `${minutesAgo}m ago`;
+                            } else {
+                                const hoursAgo = Math.floor(minutesAgo / 60);
+                                this.syncText = `${hoursAgo}h ago`;
+                            }
+                        }
+                    }
+                },
+                
+                updateLastSync() {
+                    this.lastSync = localStorage.getItem('lastSyncTime') || 'Never';
+                    this.updateSyncText();
+                }
+            };
+        }
+        
+        // Initialize week charts when tab is shown
+        window.initWeekCharts = function() {
+            // Initialize all chart modules
+            if (window.StepsChart) window.StepsChart.init();
+            if (window.WeightChart) window.WeightChart.init();
+            if (window.HeartRateChart) window.HeartRateChart.init();
+            if (window.HRVChart) window.HRVChart.init();
+        };
+    </script>
+
+    <style>
+        /* Simplified styles for MVP */
+        .tab-navigation {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        /* Hide any manual entry elements */
+        .manual-entry-card,
+        .manual-entry-button,
+        .modal-overlay {
+            display: none !important;
+        }
+        
+        /* Simplify the layout */
+        .main-content {
+            padding: var(--spacing-md);
+            max-width: 1024px;
+            margin: 0 auto;
+        }
+        
+        /* Clean up loading states */
+        .loading-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            color: var(--text-secondary);
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--surface-secondary);
+            border-top-color: var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</body>
+</html>

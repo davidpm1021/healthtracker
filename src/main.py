@@ -8,16 +8,20 @@ import os
 from pathlib import Path
 
 # Import API routers
-from api.health import router as health_router
-from api.ingest import router as ingest_router
-from api.manual import router as manual_router
-from api.summaries import router as summaries_router
-from api.jobs import router as jobs_router
-from api.ui import router as ui_router
+from .api.health import router as health_router
+from .api.ingest import router as ingest_router
+from .api.manual import router as manual_router
+from .api.summaries import router as summaries_router
+from .api.jobs import router as jobs_router
+from .api.ui import router as ui_router
+from .api.charts import router as charts_router
+from .api.goals import router as goals_router
+from .api.progress import router as progress_router
+from .api.badges import router as badges_router
 
 # Import scheduler and job registration
-from scheduler import initialize_scheduler
-from jobs import register_all_jobs
+from .scheduler import initialize_scheduler
+from .jobs import register_all_jobs
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -42,6 +46,10 @@ app.include_router(manual_router, prefix="/api")
 app.include_router(summaries_router, prefix="/api")
 app.include_router(jobs_router, prefix="/api/jobs")
 app.include_router(ui_router, prefix="/api/ui")
+app.include_router(charts_router, prefix="/api")
+app.include_router(goals_router)
+app.include_router(progress_router)
+app.include_router(badges_router)
 
 # Mount static files directory
 static_path = Path(__file__).parent.parent / "static"

@@ -8,9 +8,9 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, date
 import logging
 
-from database import DatabaseManager
-from models import ManualEntry, ManualMetricType
-from auth import require_auth
+from ..database import DatabaseManager
+from ..models import ManualEntry, ManualMetricType
+# from ..auth import require_auth  # Disabled for local development
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -125,9 +125,7 @@ class ManualEntryBatchResponse(BaseModel):
 @router.post("/manual", response_model=ManualEntryResponse)
 async def create_manual_entry(
     request: Request,
-    entry_request: ManualEntryRequest,
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    entry_request: ManualEntryRequest):
     """
     Create or update a manual data entry.
     
@@ -183,9 +181,7 @@ async def create_manual_entry(
 @router.post("/manual/batch", response_model=ManualEntryBatchResponse)
 async def create_manual_entries_batch(
     request: Request,
-    batch_request: ManualEntryBatch,
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    batch_request: ManualEntryBatch):
     """
     Create or update multiple manual data entries in a batch.
     
@@ -267,9 +263,7 @@ async def create_manual_entries_batch(
 async def get_manual_entries(
     metric: str,
     start_date: str,
-    end_date: str,
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    end_date: str):
     """
     Get manual entries for a specific metric within a date range.
     """
@@ -326,9 +320,7 @@ async def get_manual_entries(
 @router.delete("/manual/{metric}/{date}")
 async def delete_manual_entry(
     metric: str,
-    date: str,
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    date: str):
     """
     Delete a specific manual entry.
     """

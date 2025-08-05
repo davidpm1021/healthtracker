@@ -7,10 +7,10 @@ import logging
 import shutil
 import sqlite3
 from datetime import datetime, date, timedelta
-from pathlib import Path
 from typing import Dict, Any
+from pathlib import Path
 
-from database import DatabaseManager
+from ..database import DatabaseManager
 
 # Set up logging
 logger = logging.getLogger(__name__)

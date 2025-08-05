@@ -1,0 +1,496 @@
+<!-- Week View Component Template -->
+<div class="week-view-container">
+    <!-- Week Summary Header -->
+    <div class="week-summary-header">
+        <div class="summary-stats">
+            <div class="summary-stat">
+                <div class="stat-value" id="week-steps-total">--</div>
+                <div class="stat-label">Total Steps</div>
+            </div>
+            <div class="summary-stat">
+                <div class="stat-value" id="week-sleep-avg">--</div>
+                <div class="stat-label">Avg Sleep</div>
+            </div>
+            <div class="summary-stat">
+                <div class="stat-value" id="week-active-days">--</div>
+                <div class="stat-label">Active Days</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Grid Container -->
+    <div class="charts-grid">
+        <!-- Steps Bar Chart -->
+        <div class="chart-container primary-chart">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <span class="chart-icon">👟</span>
+                    <span>Daily Steps</span>
+                </div>
+                <div class="chart-controls">
+                    <button class="chart-control-btn" onclick="refreshChart('steps')">🔄</button>
+                </div>
+            </div>
+            <div class="chart-body">
+                <canvas id="steps-week-chart" class="week-chart"></canvas>
+            </div>
+            <div class="chart-footer">
+                <div class="chart-goal-line">
+                    <span class="goal-indicator"></span>
+                    <span class="goal-text">Goal: 10,000 steps/day</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Weight Line Chart -->
+        <div class="chart-container secondary-chart">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <span class="chart-icon">⚖️</span>
+                    <span>Weight Trend</span>
+                </div>
+                <div class="chart-controls">
+                    <button class="chart-control-btn" onclick="refreshChart('weight')">🔄</button>
+                </div>
+            </div>
+            <div class="chart-body">
+                <canvas id="weight-week-chart" class="week-chart"></canvas>
+            </div>
+            <div class="chart-footer">
+                <div class="trend-summary" id="weight-trend-summary">
+                    <span class="trend-arrow">→</span>
+                    <span class="trend-text">Stable this week</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Heart Rate Line Chart -->
+        <div class="chart-container secondary-chart">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <span class="chart-icon">❤️</span>
+                    <span>Heart Rate</span>
+                </div>
+                <div class="chart-controls">
+                    <button class="chart-control-btn" onclick="refreshChart('heart_rate')">🔄</button>
+                </div>
+            </div>
+            <div class="chart-body">
+                <canvas id="heart-rate-week-chart" class="week-chart"></canvas>
+            </div>
+            <div class="chart-footer">
+                <div class="trend-summary" id="heart-rate-trend-summary">
+                    <span class="trend-arrow">→</span>
+                    <span class="trend-text">Normal range</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sleep Bar Chart -->
+        <div class="chart-container secondary-chart">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <span class="chart-icon">😴</span>
+                    <span>Sleep Duration</span>
+                </div>
+                <div class="chart-controls">
+                    <button class="chart-control-btn" onclick="refreshChart('sleep')">🔄</button>
+                </div>
+            </div>
+            <div class="chart-body">
+                <canvas id="sleep-week-chart" class="week-chart"></canvas>
+            </div>
+            <div class="chart-footer">
+                <div class="chart-goal-line">
+                    <span class="goal-indicator"></span>
+                    <span class="goal-text">Goal: 8 hours/night</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- HRV Manual Entries Chart -->
+        <div class="chart-container manual-chart" id="hrv-chart-container" style="display: none;">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <span class="chart-icon">💓</span>
+                    <span>HRV Entries</span>
+                    <span class="manual-badge">Manual</span>
+                </div>
+                <div class="chart-controls">
+                    <button class="chart-control-btn" onclick="refreshChart('hrv')">🔄</button>
+                </div>
+            </div>
+            <div class="chart-body">
+                <canvas id="hrv-week-chart" class="week-chart"></canvas>
+            </div>
+            <div class="chart-footer">
+                <div class="trend-summary" id="hrv-trend-summary" style="display: none;">
+                    <span class="trend-arrow">→</span>
+                    <span class="trend-text">No entries this week</span>
+                </div>
+                <div class="manual-entry-prompt" id="hrv-entry-prompt">
+                    <span>📝 Log your HRV to see trends</span>
+                    <button class="entry-button small" onclick="showManualEntry('hrv')">Add Entry</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Week Insights Section -->
+    <div class="week-insights">
+        <div class="insights-header">
+            <div class="insights-title">
+                <span class="insights-icon">💡</span>
+                <span>This Week's Insights</span>
+            </div>
+        </div>
+        <div class="insights-content" id="week-insights-content">
+            <!-- Dynamic insights loaded here -->
+            <div class="insight-loading">Loading insights...</div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Week View Specific Styles */
+.week-view-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-md);
+    height: 100%;
+    overflow-y: auto;
+}
+
+.week-summary-header {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--spacing-lg);
+    text-align: center;
+}
+
+.summary-stat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+}
+
+/* Responsive grid for larger screens */
+@media (min-width: 1024px) {
+    .charts-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .primary-chart {
+        grid-column: 1 / -1;
+    }
+}
+
+.chart-container {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--surface-secondary);
+}
+
+.chart-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.chart-icon {
+    font-size: 1.1rem;
+}
+
+.manual-badge {
+    background: var(--accent-color);
+    color: white;
+    font-size: 0.625rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.chart-controls {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.chart-control-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart-control-btn:hover {
+    background: var(--surface-secondary);
+    border-color: var(--accent-color);
+}
+
+.chart-body {
+    flex: 1;
+    padding: var(--spacing-md);
+    position: relative;
+    min-height: 200px;
+}
+
+.week-chart {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.chart-footer {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--surface-secondary);
+    border-top: 1px solid var(--border-color);
+}
+
+.chart-goal-line {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.goal-indicator {
+    width: 12px;
+    height: 2px;
+    background: var(--accent-color);
+    border-radius: 1px;
+}
+
+.goal-text {
+    font-weight: 500;
+}
+
+.trend-summary {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.trend-arrow {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.trend-text {
+    font-weight: 500;
+}
+
+.manual-entry-prompt {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.entry-button.small {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    min-height: 32px;
+}
+
+.week-insights {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.insights-header {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--surface-secondary);
+}
+
+.insights-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.insights-icon {
+    font-size: 1.1rem;
+}
+
+.insights-content {
+    padding: var(--spacing-md);
+}
+
+.insight-loading {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Touch optimizations for 7-inch screen */
+@media (max-width: 1024px) {
+    .chart-body {
+        min-height: 180px;
+    }
+    
+    .summary-stats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .stat-value {
+        font-size: 1.25rem;
+    }
+}
+
+/* Color scheme for trend indicators */
+.trend-up .trend-arrow {
+    color: var(--success-color, #22c55e);
+}
+
+.trend-down .trend-arrow {
+    color: var(--warning-color, #f59e0b);
+}
+
+.trend-flat .trend-arrow {
+    color: var(--text-secondary);
+}
+</style>
+
+<script>
+// Week view specific JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize week view when component loads
+    initializeWeekView();
+});
+
+function initializeWeekView() {
+    // Load week summary stats
+    loadWeekSummaryStats();
+    
+    // Load week insights
+    loadWeekInsights();
+    
+    // Initialize chart refresh functionality
+    window.refreshChart = function(chartType) {
+        console.log(`Refreshing ${chartType} chart`);
+        
+        // Use chart-specific refresh methods
+        switch(chartType) {
+            case 'steps':
+                if (window.StepsChart) {
+                    window.StepsChart.refresh();
+                }
+                break;
+            case 'weight':
+                if (window.WeightChart) {
+                    window.WeightChart.refresh();
+                }
+                break;
+            case 'heart_rate':
+                if (window.HeartRateChart) {
+                    window.HeartRateChart.refresh();
+                }
+                break;
+            case 'sleep':
+                if (window.WeekCharts && window.WeekCharts.sleep) {
+                    window.WeekCharts.sleep.update();
+                }
+                break;
+            case 'hrv':
+                if (window.HRVChart) {
+                    window.HRVChart.refresh();
+                }
+                break;
+            default:
+                // Fallback to generic update
+                if (window.WeekCharts && window.WeekCharts[chartType]) {
+                    window.WeekCharts[chartType].update();
+                }
+        }
+    };
+}
+
+async function loadWeekSummaryStats() {
+    try {
+        // This would call a dedicated API endpoint for week summary stats
+        // For now, using placeholder data
+        document.getElementById('week-steps-total').textContent = '67,842';
+        document.getElementById('week-sleep-avg').textContent = '7.6h';
+        document.getElementById('week-active-days').textContent = '6/7';
+    } catch (error) {
+        console.error('Error loading week summary stats:', error);
+    }
+}
+
+async function loadWeekInsights() {
+    try {
+        const insightsContent = document.getElementById('week-insights-content');
+        insightsContent.innerHTML = `
+            <div class="insight-item">📈 Your step count increased by 12% compared to last week</div>
+            <div class="insight-item">😴 Sleep consistency improved - 6 nights within target range</div>
+            <div class="insight-item">❤️ Average heart rate shows good recovery pattern</div>
+        `;
+    } catch (error) {
+        console.error('Error loading week insights:', error);
+        document.getElementById('week-insights-content').innerHTML = 
+            '<div class="insight-item">Unable to load insights right now</div>';
+    }
+}
+</script>

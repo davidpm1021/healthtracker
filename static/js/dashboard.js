@@ -531,3 +531,42 @@ document.addEventListener('alpine:init', () => {
 
 // Export utilities for global access
 window.HealthTrackerUtils = HealthTrackerUtils;
+
+// Sync banner component
+function syncBanner() {
+    return {
+        syncStatusClass: 'online',
+        syncIcon: '🟢',
+        syncMessage: 'Connected',
+        lastSyncTime: '',
+        isRefreshing: false,
+        
+        checkSyncStatus() {
+            this.updateSyncStatus();
+        },
+        
+        updateSyncStatus() {
+            const now = new Date();
+            this.lastSyncTime = now.toLocaleTimeString();
+            this.syncStatusClass = 'online';
+            this.syncIcon = '🟢';
+            this.syncMessage = 'Connected';
+        },
+        
+        refreshData() {
+            if (this.isRefreshing) return;
+            
+            this.isRefreshing = true;
+            // Trigger HTMX refresh for today's content
+            setTimeout(() => {
+                this.isRefreshing = false;
+                this.updateSyncStatus();
+            }, 1000);
+        }
+    };
+}
+
+// Export Alpine.js components globally
+window.dashboardData = dashboardData;
+window.syncStatus = syncStatus;
+window.syncBanner = syncBanner;

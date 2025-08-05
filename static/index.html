@@ -7,14 +7,25 @@
     
     <!-- CSS Files -->
     <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/charts.css">
     
     <!-- External Libraries -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
     
     <!-- Custom JavaScript -->
-    <script src="/static/js/dashboard.js" defer></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/charts.js"></script>
+    <script src="/static/js/charts/steps.js"></script>
+    <script src="/static/js/charts/weight.js"></script>
+    <script src="/static/js/charts/heart_rate.js"></script>
+    <script src="/static/js/charts/hrv.js"></script>
+    <script src="/static/js/charts/month.js"></script>
+    <script src="/static/js/dashboard-goals.js"></script>
+    <script src="/static/js/badges.js"></script>
+    
+    <!-- Alpine.js (load last) -->
+    <script src="https://unpkg.com/alpinejs@3.13.5/dist/cdn.min.js" defer></script>
 </head>
 <body>
     <!-- Main App Container -->
@@ -69,6 +80,16 @@
             >
                 <span class="tab-icon">🎯</span>
                 <span class="tab-label">Goals</span>
+            </button>
+            
+            <button 
+                class="tab-button" 
+                :class="{'active': activeTab === 'badges'}"
+                @click="switchTab('badges')"
+                type="button"
+            >
+                <span class="tab-icon">🏆</span>
+                <span class="tab-label">Badges</span>
             </button>
         </nav>
 
@@ -225,6 +246,34 @@
                     <div class="loading-card">
                         <div class="loading-spinner"></div>
                         <p>Loading goals...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Badges View -->
+            <div 
+                class="tab-content" 
+                x-show="activeTab === 'badges'" 
+                x-transition:enter="fade-in"
+                x-transition:leave="fade-out"
+            >
+                <div class="content-header">
+                    <h2>Achievement Badges</h2>
+                    <p class="content-subtitle">Celebrate your milestones</p>
+                </div>
+                
+                <!-- Badges Container -->
+                <div 
+                    id="badges-content" 
+                    class="badges-container"
+                    hx-get="/api/ui/badges"
+                    hx-trigger="load, every 300s"
+                    hx-swap="innerHTML"
+                >
+                    <!-- Loading placeholder -->
+                    <div class="loading-card">
+                        <div class="loading-spinner"></div>
+                        <p>Loading badges...</p>
                     </div>
                 </div>
             </div>

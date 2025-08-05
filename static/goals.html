@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goals Management - Health Tracker</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/goals.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="index.html" class="brand-link">
+                    <span class="brand-icon">📊</span>
+                    <span class="brand-text">Health Tracker</span>
+                </a>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a href="charts.html" class="nav-link">Charts</a>
+                </li>
+                <li class="nav-item">
+                    <a href="goals.html" class="nav-link active">Goals</a>
+                </li>
+                <li class="nav-item">
+                    <a href="manual.html" class="nav-link">Manual Entry</a>
+                </li>
+            </ul>
+            
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="goals-page">
+            <!-- Page Header -->
+            <header class="goals-header">
+                <div class="goals-title">
+                    <h1>Health Goals</h1>
+                    <p class="goals-subtitle">Set and track your health and fitness objectives</p>
+                </div>
+                
+                <div class="goals-actions">
+                    <button class="btn btn-secondary" id="refresh-goals-btn">
+                        🔄 Refresh
+                    </button>
+                    <button class="btn btn-primary" id="create-goal-btn">
+                        ➕ Create Goal
+                    </button>
+                </div>
+            </header>
+
+            <!-- Goals Container -->
+            <div id="goals-container" class="goals-container">
+                <!-- Goals will be rendered here by JavaScript -->
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>Loading your goals...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Goal Creation/Edit Modal -->
+    <div class="modal" id="goal-modal">
+        <div class="modal-backdrop modal-close"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Create New Goal</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <form class="goal-form" id="goal-form">
+                    <div class="form-group">
+                        <label for="goal-type" class="form-label required">Goal Type</label>
+                        <select id="goal-type" name="goal_type" class="form-select" required>
+                            <option value="">Select a goal type...</option>
+                            <option value="steps">👟 Daily Steps</option>
+                            <option value="sleep_duration">😴 Sleep Duration</option>
+                            <option value="weight_logging">⚖️ Weight Logging</option>
+                            <option value="hrv_entry">❤️ HRV Entry</option>
+                            <option value="heart_rate_zone">💗 Heart Rate Zone</option>
+                        </select>
+                        <small class="form-help">Choose the type of health metric you want to track</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="target-value" class="form-label required">Target Value</label>
+                        <div class="target-input-group">
+                            <input 
+                                type="number" 
+                                id="target-value" 
+                                name="target_value" 
+                                class="form-input" 
+                                min="0" 
+                                step="0.1" 
+                                required
+                                placeholder="Enter target value"
+                            >
+                            <span class="target-unit" id="target-unit">units</span>
+                        </div>
+                        <small class="form-help">The target value you want to achieve</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="frequency" class="form-label required">Frequency</label>
+                        <select id="frequency" name="frequency" class="form-select" required>
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                        </select>
+                        <small class="form-help">How often you want to achieve this goal</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="status" class="form-label">Status</label>
+                        <select id="status" name="status" class="form-select">
+                            <option value="active">Active</option>
+                            <option value="paused">Paused</option>
+                        </select>
+                        <small class="form-help">Current status of the goal</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea 
+                            id="description" 
+                            name="description" 
+                            class="form-textarea"
+                            placeholder="Optional description or notes about this goal"
+                            rows="3"
+                        ></textarea>
+                        <small class="form-help">Optional notes about your goal</small>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Goal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Styles -->
+    <style>
+        .loading-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            border: 3px solid var(--border-light);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .goals-container:empty::after {
+            content: "Loading goals...";
+            display: block;
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        /* Modal overlay fix */
+        .modal-open {
+            overflow: hidden;
+        }
+
+        /* Form validation styles */
+        .form-input:invalid,
+        .form-select:invalid {
+            border-color: var(--error-color);
+        }
+
+        .form-input:valid,
+        .form-select:valid {
+            border-color: var(--success-color);
+        }
+
+        /* Goal type specific styles */
+        .goal-card[data-goal-type="steps"] .goal-icon { color: #4CAF50; }
+        .goal-card[data-goal-type="sleep_duration"] .goal-icon { color: #9C27B0; }
+        .goal-card[data-goal-type="weight_logging"] .goal-icon { color: #FF9800; }
+        .goal-card[data-goal-type="hrv_entry"] .goal-icon { color: #F44336; }
+        .goal-card[data-goal-type="heart_rate_zone"] .goal-icon { color: #E91E63; }
+    </style>
+
+    <!-- JavaScript -->
+    <script src="js/navigation.js"></script>
+    <script src="js/goals.js"></script>
+    <script src="js/components/streak-display.js"></script>
+    <script src="js/components/streak-calendar.js"></script>
+    <script src="js/components/streak-analytics.js"></script>
+    
+    <!-- Initialize page -->
+    <script>
+        // Add any page-specific initialization here
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Goals page loaded');
+            
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Escape key closes modal
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('goal-modal');
+                    if (modal && modal.classList.contains('active')) {
+                        window.goalsManager.hideGoalModal();
+                    }
+                }
+                
+                // Ctrl/Cmd + N creates new goal
+                if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                    e.preventDefault();
+                    window.goalsManager.showGoalModal();
+                }
+                
+                // F5/Ctrl+R refreshes goals
+                if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key === 'r')) {
+                    e.preventDefault();
+                    window.goalsManager.refreshGoals();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

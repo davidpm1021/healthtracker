@@ -6,9 +6,10 @@ import logging
 from datetime import datetime, date, timedelta
 from typing import Dict, Any
 
-from database import DatabaseManager
-from summaries import SummaryComputer
-from models import MetricType
+from ..database import DatabaseManager
+from ..summaries import SummaryComputer
+from ..models import MetricType
+from ..services.badges_service import BadgesService
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -183,6 +184,39 @@ def data_quality_check_job() -> Dict[str, Any]:
         raise
 
 
+def evaluate_badges_job() -> Dict[str, Any]:
+    """
+    Hourly job to evaluate and award badges based on current achievements.
+    """
+    try:
+        logger.info("Starting hourly badge evaluation job")
+        
+        badges_service = BadgesService()
+        
+        # Evaluate all badges and earn any that meet criteria
+        newly_earned = badges_service.evaluate_and_earn_badges()
+        
+        # Get current badge progress
+        progress = badges_service.get_badge_progress()
+        
+        logger.info(f"Badge evaluation completed: {len(newly_earned)} new badges earned")
+        
+        return {
+            'job_type': 'hourly_badge_evaluation',
+            'success': True,
+            'timestamp': datetime.now().isoformat(),
+            'newly_earned_badges': len(newly_earned),
+            'new_badge_details': [{'id': b['id'], 'name': b['name']} for b in newly_earned],
+            'total_earned': progress['earned_badges'],
+            'total_available': progress['total_badges'],
+            'completion_percentage': progress['completion_percentage']
+        }
+        
+    except Exception as e:
+        logger.error(f"Badge evaluation job failed: {e}")
+        raise
+
+
 def register_hourly_jobs(scheduler) -> None:
     """Register all hourly jobs with the scheduler."""
     
@@ -214,4 +248,13 @@ def register_hourly_jobs(scheduler) -> None:
         enabled=True
     )
     
-    logger.info("Registered 3 hourly jobs with scheduler")
+    # Badge evaluation - runs every hour
+    scheduler.register_job(
+        name="hourly_badge_evaluation",
+        function=evaluate_badges_job,
+        interval_minutes=60,
+        description="Evaluate achievements and award earned badges",
+        enabled=True
+    )
+    
+    logger.info("Registered 4 hourly jobs with scheduler")

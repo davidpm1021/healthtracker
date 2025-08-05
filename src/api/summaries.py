@@ -8,11 +8,11 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, date, timedelta
 import logging
 
-from database import DatabaseManager
-from models import MetricType
-from summaries import SummaryComputer, compute_daily_summaries, update_all_analytics
-from trends import analyze_metric_trends
-from auth import require_auth
+from ..database import DatabaseManager
+from ..models import MetricType
+from ..summaries import SummaryComputer, compute_daily_summaries, update_all_analytics
+from ..trends import analyze_metric_trends
+# from ..auth import require_auth  # Disabled for local development
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -72,9 +72,7 @@ async def get_metric_summaries(
     metric: str,
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    limit: Optional[int] = Query(100, description="Maximum number of summaries to return"),
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    limit: Optional[int] = Query(100, description="Maximum number of summaries to return")):
     """
     Get daily summaries for a specific metric within a date range.
     """
@@ -142,9 +140,7 @@ async def get_metric_summaries(
 async def get_all_summaries(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    limit: Optional[int] = Query(30, description="Maximum number of summaries per metric"),
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    limit: Optional[int] = Query(30, description="Maximum number of summaries per metric")):
     """
     Get daily summaries for all metrics within a date range.
     """
@@ -207,9 +203,7 @@ async def get_all_summaries(
 @router.get("/trends/{metric}", response_model=TrendAnalysisResponse)
 async def get_metric_trends(
     metric: str,
-    days: Optional[int] = Query(30, description="Number of days to analyze"),
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    days: Optional[int] = Query(30, description="Number of days to analyze")):
     """
     Get trend analysis for a specific metric.
     """
@@ -254,9 +248,7 @@ async def get_metric_trends(
 async def compute_summaries(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    force_recompute: bool = Query(False, description="Force recomputation of existing summaries"),
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    force_recompute: bool = Query(False, description="Force recomputation of existing summaries")):
     """
     Compute daily summaries from raw data.
     """
@@ -291,9 +283,7 @@ async def compute_summaries(
 
 @router.post("/update-analytics", response_model=Dict[str, Any])
 async def update_analytics(
-    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)")):
     """
     Update moving averages and trends for all metrics.
     """
@@ -319,9 +309,7 @@ async def update_analytics(
 
 @router.get("/statistics")
 async def get_summary_statistics(
-    days: Optional[int] = Query(30, description="Number of days to analyze"),
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    days: Optional[int] = Query(30, description="Number of days to analyze")):
     """
     Get summary statistics for all metrics.
     """

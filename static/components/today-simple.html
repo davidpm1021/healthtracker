@@ -1,0 +1,462 @@
+<!-- Simplified Today View - Essential Metrics Only -->
+<div class="today-metrics-container">
+    
+    <!-- Primary Metrics Row -->
+    <div class="primary-metrics-row">
+        
+        <!-- Steps Card -->
+        <div class="metric-card primary-card steps-card">
+            <div class="metric-header">
+                <div class="metric-icon">👟</div>
+                <div class="metric-label">Steps</div>
+            </div>
+            <div class="metric-value">
+                <span class="value-number" id="steps-value">--</span>
+                <span class="value-unit">steps</span>
+            </div>
+            <div class="metric-trend" id="steps-trend">
+                <span class="trend-arrow">→</span>
+                <span class="trend-text">vs yesterday</span>
+            </div>
+        </div>
+        
+        <!-- Sleep Card -->
+        <div class="metric-card primary-card sleep-card">
+            <div class="metric-header">
+                <div class="metric-icon">😴</div>
+                <div class="metric-label">Sleep</div>
+            </div>
+            <div class="metric-value">
+                <span class="value-number" id="sleep-value">--</span>
+                <span class="value-unit">hours</span>
+            </div>
+            <div class="metric-trend" id="sleep-trend">
+                <span class="trend-arrow">→</span>
+                <span class="trend-text">vs average</span>
+            </div>
+        </div>
+        
+    </div>
+    
+    <!-- Secondary Metrics Row -->
+    <div class="secondary-metrics-row">
+        
+        <!-- Weight Card -->
+        <div class="metric-card secondary-card weight-card">
+            <div class="metric-header">
+                <div class="metric-icon">⚖️</div>
+                <div class="metric-label">Weight</div>
+            </div>
+            <div class="metric-value">
+                <span class="value-number" id="weight-value">--</span>
+                <span class="value-unit">kg</span>
+            </div>
+            <div class="metric-date" id="weight-date">No data</div>
+        </div>
+        
+        <!-- Heart Rate Card -->
+        <div class="metric-card secondary-card heart-rate-card">
+            <div class="metric-header">
+                <div class="metric-icon">❤️</div>
+                <div class="metric-label">Heart Rate</div>
+            </div>
+            <div class="metric-value">
+                <span class="value-number" id="heart-rate-value">--</span>
+                <span class="value-unit">bpm</span>
+            </div>
+            <div class="metric-date" id="heart-rate-date">No data</div>
+        </div>
+        
+        <!-- HRV Card (Optional) -->
+        <div class="metric-card secondary-card hrv-card">
+            <div class="metric-header">
+                <div class="metric-icon">💗</div>
+                <div class="metric-label">HRV</div>
+            </div>
+            <div class="metric-value">
+                <span class="value-number" id="hrv-value">--</span>
+                <span class="value-unit">ms</span>
+            </div>
+            <div class="metric-date" id="hrv-date">No data</div>
+        </div>
+        
+    </div>
+    
+    <!-- Quick Summary -->
+    <div class="summary-card">
+        <div class="summary-header">
+            <span class="summary-icon">📊</span>
+            <span class="summary-title">Today's Summary</span>
+        </div>
+        <div class="summary-content" id="today-summary">
+            Loading summary...
+        </div>
+    </div>
+    
+</div>
+
+<style>
+/* Simplified Today View Styles */
+.today-metrics-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-md);
+}
+
+/* Metrics Rows */
+.primary-metrics-row,
+.secondary-metrics-row {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+.primary-metrics-row {
+    grid-template-columns: 1fr 1fr;
+}
+
+.secondary-metrics-row {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* Metric Cards */
+.metric-card {
+    background: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    transition: transform 0.2s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+}
+
+.primary-card {
+    min-height: 160px;
+}
+
+.secondary-card {
+    min-height: 140px;
+}
+
+/* Metric Header */
+.metric-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.metric-icon {
+    font-size: 1.5rem;
+}
+
+.metric-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Metric Value */
+.metric-value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.value-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.1;
+}
+
+.secondary-card .value-number {
+    font-size: 1.5rem;
+}
+
+.value-unit {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Trends and Dates */
+.metric-trend {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.metric-date {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: auto;
+}
+
+.trend-arrow {
+    font-weight: 600;
+}
+
+.trend-up .trend-arrow {
+    color: var(--success-color, #22c55e);
+}
+
+.trend-down .trend-arrow {
+    color: var(--warning-color, #f59e0b);
+}
+
+.trend-flat .trend-arrow {
+    color: var(--text-secondary);
+}
+
+/* Summary Card */
+.summary-card {
+    background: var(--surface-secondary);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-lg);
+    border-left: 4px solid var(--accent-color);
+}
+
+.summary-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.summary-icon {
+    font-size: 1.25rem;
+}
+
+.summary-title {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.summary-content {
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .primary-metrics-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .secondary-metrics-row {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .hrv-card {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 480px) {
+    .secondary-metrics-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .primary-card,
+    .secondary-card {
+        min-height: 120px;
+    }
+    
+    .value-number {
+        font-size: 1.75rem;
+    }
+    
+    .secondary-card .value-number {
+        font-size: 1.25rem;
+    }
+}
+
+/* Data States */
+.metric-card.no-data {
+    opacity: 0.6;
+}
+
+.metric-card.fresh-data {
+    border-left: 3px solid var(--success-color, #22c55e);
+}
+
+.metric-card.stale-data {
+    border-left: 3px solid var(--warning-color, #f59e0b);
+}
+</style>
+
+<script>
+// Load and update today's metrics
+document.addEventListener('DOMContentLoaded', function() {
+    loadTodayMetrics();
+    
+    // Update every 5 minutes
+    setInterval(loadTodayMetrics, 5 * 60 * 1000);
+});
+
+async function loadTodayMetrics() {
+    try {
+        // Load today's summary data
+        const response = await fetch('/api/summaries?metric=all&days=1');
+        if (!response.ok) throw new Error('Failed to load metrics');
+        
+        const data = await response.json();
+        updateMetricCards(data);
+        updateTodaySummary(data);
+        
+    } catch (error) {
+        console.error('Error loading today metrics:', error);
+        showErrorState();
+    }
+}
+
+function updateMetricCards(data) {
+    // Update steps
+    const stepsData = data.find(d => d.metric === 'steps');
+    if (stepsData && stepsData.summaries.length > 0) {
+        const latest = stepsData.summaries[0];
+        document.getElementById('steps-value').textContent = formatNumber(latest.steps_total || 0);
+        updateTrend('steps-trend', latest.trend_7d);
+        markCardFresh('steps-card');
+    }
+    
+    // Update sleep
+    const sleepData = data.find(d => d.metric === 'sleep');
+    if (sleepData && sleepData.summaries.length > 0) {
+        const latest = sleepData.summaries[0];
+        const hours = Math.round((latest.sleep_total || 0) / 60 * 10) / 10;
+        document.getElementById('sleep-value').textContent = hours;
+        updateTrend('sleep-trend', latest.trend_7d);
+        markCardFresh('sleep-card');
+    }
+    
+    // Update weight
+    const weightData = data.find(d => d.metric === 'weight');
+    if (weightData && weightData.summaries.length > 0) {
+        const latest = weightData.summaries[0];
+        document.getElementById('weight-value').textContent = (latest.weight_value || 0).toFixed(1);
+        document.getElementById('weight-date').textContent = formatDate(latest.date);
+        markCardFresh('weight-card');
+    }
+    
+    // Update heart rate
+    const hrData = data.find(d => d.metric === 'heart_rate');
+    if (hrData && hrData.summaries.length > 0) {
+        const latest = hrData.summaries[0];
+        document.getElementById('heart-rate-value').textContent = Math.round(latest.heart_rate_avg || 0);
+        document.getElementById('heart-rate-date').textContent = formatDate(latest.date);
+        markCardFresh('heart-rate-card');
+    }
+    
+    // Update HRV from manual entries if available
+    loadHRVData();
+}
+
+async function loadHRVData() {
+    try {
+        const response = await fetch('/api/manual?metric=hrv&limit=1');
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        if (data.length > 0) {
+            const latest = data[0];
+            document.getElementById('hrv-value').textContent = Math.round(latest.hrv_value || 0);
+            document.getElementById('hrv-date').textContent = formatDate(latest.date);
+            markCardFresh('hrv-card');
+        }
+    } catch (error) {
+        console.error('Error loading HRV data:', error);
+    }
+}
+
+function updateTodaySummary(data) {
+    let summaryText = 'No data available yet.';
+    
+    if (data.length > 0) {
+        const summaries = [];
+        
+        const stepsData = data.find(d => d.metric === 'steps');
+        if (stepsData && stepsData.summaries.length > 0) {
+            const steps = stepsData.summaries[0].steps_total || 0;
+            summaries.push(`${formatNumber(steps)} steps today`);
+        }
+        
+        const sleepData = data.find(d => d.metric === 'sleep');
+        if (sleepData && sleepData.summaries.length > 0) {
+            const hours = Math.round((sleepData.summaries[0].sleep_total || 0) / 60 * 10) / 10;
+            summaries.push(`${hours}h sleep last night`);
+        }
+        
+        if (summaries.length > 0) {
+            summaryText = summaries.join(' • ');
+        }
+    }
+    
+    document.getElementById('today-summary').textContent = summaryText;
+}
+
+function updateTrend(elementId, trendValue) {
+    const element = document.getElementById(elementId);
+    if (!element || !trendValue) return;
+    
+    const arrow = element.querySelector('.trend-arrow');
+    const text = element.querySelector('.trend-text');
+    
+    if (trendValue > 0.1) {
+        arrow.textContent = '↗';
+        element.className = 'metric-trend trend-up';
+        text.textContent = 'trending up';
+    } else if (trendValue < -0.1) {
+        arrow.textContent = '↘';
+        element.className = 'metric-trend trend-down';
+        text.textContent = 'trending down';
+    } else {
+        arrow.textContent = '→';
+        element.className = 'metric-trend trend-flat';
+        text.textContent = 'stable';
+    }
+}
+
+function markCardFresh(cardClass) {
+    const card = document.querySelector(`.${cardClass}`);
+    if (card) {
+        card.classList.remove('no-data', 'stale-data');
+        card.classList.add('fresh-data');
+    }
+}
+
+function showErrorState() {
+    document.getElementById('today-summary').textContent = 'Unable to load metrics. Check connection.';
+}
+
+function formatNumber(num) {
+    if (num >= 1000) {
+        return Math.round(num / 100) / 10 + 'k';
+    }
+    return num.toString();
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return 'No date';
+    
+    const date = new Date(dateStr);
+    const today = new Date();
+    const diffDays = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    
+    return date.toLocaleDateString();
+}
+</script>

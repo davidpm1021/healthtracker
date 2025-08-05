@@ -4,13 +4,14 @@ Handles scheduled tasks like summary updates and database maintenance.
 """
 from .hourly import register_hourly_jobs
 from .nightly import register_nightly_jobs
+from .progress_update import register_progress_jobs
 
-__all__ = ['register_hourly_jobs', 'register_nightly_jobs']
+__all__ = ['register_hourly_jobs', 'register_nightly_jobs', 'register_progress_jobs']
 
 
 def register_all_jobs():
     """Register all background jobs with the scheduler."""
-    from scheduler import get_scheduler
+    from ..scheduler import get_scheduler
     
     scheduler = get_scheduler()
     
@@ -19,5 +20,8 @@ def register_all_jobs():
     
     # Register nightly jobs
     register_nightly_jobs(scheduler)
+    
+    # Register progress tracking jobs
+    register_progress_jobs()
     
     return scheduler

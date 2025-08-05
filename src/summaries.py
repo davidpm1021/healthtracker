@@ -8,13 +8,9 @@ from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 import logging
 
-# Add parent directories to path for imports
-sys.path.append(str(Path(__file__).parent))
-sys.path.append(str(Path(__file__).parent.parent))
-
-from models import DailySummary, MetricType
-from database import DatabaseManager
-from normalization import normalize_raw_points_to_summaries
+from .models import DailySummary, MetricType
+from .database import DatabaseManager
+from .normalization import normalize_raw_points_to_summaries
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

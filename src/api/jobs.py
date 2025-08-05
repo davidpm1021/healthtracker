@@ -8,8 +8,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import logging
 
-from scheduler import get_scheduler
-from auth import require_auth
+from ..scheduler import get_scheduler
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -66,9 +65,7 @@ class SchedulerStatusResponse(BaseModel):
 
 
 @router.get("/status", response_model=SchedulerStatusResponse)
-async def get_scheduler_status(
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+async def get_scheduler_status():
     """
     Get overall scheduler status and summary.
     """
@@ -107,9 +104,7 @@ async def get_scheduler_status(
 
 
 @router.get("/jobs", response_model=Dict[str, JobStatusResponse])
-async def get_all_jobs(
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+async def get_all_jobs():
     """
     Get status for all registered jobs.
     """
@@ -140,9 +135,7 @@ async def get_all_jobs(
 
 @router.get("/jobs/{job_name}", response_model=JobStatusResponse)
 async def get_job_status(
-    job_name: str,
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    job_name: str):
     """
     Get status for a specific job.
     """
@@ -174,9 +167,7 @@ async def get_job_status(
 
 @router.post("/jobs/{job_name}/run", response_model=JobExecutionResponse)
 async def run_job_now(
-    job_name: str,
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    job_name: str):
     """
     Manually trigger a job to run immediately.
     """
@@ -215,9 +206,7 @@ async def run_job_now(
 
 @router.post("/jobs/{job_name}/enable")
 async def enable_job(
-    job_name: str,
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    job_name: str):
     """
     Enable a job.
     """
@@ -240,9 +229,7 @@ async def enable_job(
 
 @router.post("/jobs/{job_name}/disable")
 async def disable_job(
-    job_name: str,
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    job_name: str):
     """
     Disable a job.
     """
@@ -265,9 +252,7 @@ async def disable_job(
 
 @router.get("/history", response_model=List[JobHistoryResponse])
 async def get_job_history(
-    limit: Optional[int] = Query(50, description="Maximum number of history entries to return"),
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    limit: Optional[int] = Query(50, description="Maximum number of history entries to return")):
     """
     Get job execution history.
     """
@@ -297,9 +282,7 @@ async def get_job_history(
 @router.get("/history/{job_name}", response_model=List[JobHistoryResponse])
 async def get_job_history_by_name(
     job_name: str,
-    limit: Optional[int] = Query(20, description="Maximum number of history entries to return"),
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+    limit: Optional[int] = Query(20, description="Maximum number of history entries to return")):
     """
     Get execution history for a specific job.
     """
@@ -339,9 +322,7 @@ async def get_job_history_by_name(
 
 
 @router.post("/start")
-async def start_scheduler(
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+async def start_scheduler():
     """
     Start the job scheduler if not already running.
     """
@@ -362,9 +343,7 @@ async def start_scheduler(
 
 
 @router.post("/stop")
-async def stop_scheduler(
-    auth_context: Dict[str, Any] = Depends(require_auth)
-):
+async def stop_scheduler():
     """
     Stop the job scheduler.
     """
