@@ -249,6 +249,54 @@
             cursor: pointer;
             transition: background 0.2s ease;
         }
+        
+        /* Custom Numpad Styles */
+        .numpad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .numpad-btn {
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 60px;
+        }
+        
+        .numpad-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.05);
+        }
+        
+        .numpad-btn:active {
+            background: rgba(255, 255, 255, 0.35);
+            transform: scale(0.95);
+        }
+        
+        .numpad-btn.clear-btn {
+            background: rgba(255, 59, 48, 0.3);
+            font-size: 16px;
+        }
+        
+        .numpad-btn.clear-btn:hover {
+            background: rgba(255, 59, 48, 0.4);
+        }
+        
+        .numpad-btn.backspace-btn {
+            background: rgba(255, 149, 0, 0.3);
+        }
+        
+        .numpad-btn.backspace-btn:hover {
+            background: rgba(255, 149, 0, 0.4);
+        }
 
         .hrv-btn:hover {
             background: #45a049;
@@ -294,15 +342,30 @@
                         </h3>
                         <div id="hrvInputContainer" style="display: none;">
                             <input 
-                                type="number" 
+                                type="text" 
                                 class="hrv-input" 
                                 id="hrvInput" 
                                 placeholder="Enter HRV value (ms)"
-                                min="1"
-                                max="200"
-                                inputmode="numeric"
-                                pattern="[0-9]*"
+                                readonly
+                                onclick="showNumpad()"
+                                style="cursor: pointer;"
                             >
+                            <div id="customNumpad" style="display: none; margin-top: 16px;">
+                                <div class="numpad-grid">
+                                    <button class="numpad-btn" onclick="addDigit('1')">1</button>
+                                    <button class="numpad-btn" onclick="addDigit('2')">2</button>
+                                    <button class="numpad-btn" onclick="addDigit('3')">3</button>
+                                    <button class="numpad-btn" onclick="addDigit('4')">4</button>
+                                    <button class="numpad-btn" onclick="addDigit('5')">5</button>
+                                    <button class="numpad-btn" onclick="addDigit('6')">6</button>
+                                    <button class="numpad-btn" onclick="addDigit('7')">7</button>
+                                    <button class="numpad-btn" onclick="addDigit('8')">8</button>
+                                    <button class="numpad-btn" onclick="addDigit('9')">9</button>
+                                    <button class="numpad-btn clear-btn" onclick="clearInput()">Clear</button>
+                                    <button class="numpad-btn" onclick="addDigit('0')">0</button>
+                                    <button class="numpad-btn backspace-btn" onclick="backspace()">⌫</button>
+                                </div>
+                            </div>
                             <button class="hrv-btn" onclick="submitHRV()">Save HRV</button>
                         </div>
                     </div>
@@ -504,12 +567,40 @@
             if (container.style.display === 'none') {
                 container.style.display = 'block';
                 icon.textContent = '▼';
-                // Focus on input when opened
-                document.getElementById('hrvInput').focus();
+                // Show numpad automatically when opened
+                showNumpad();
             } else {
                 container.style.display = 'none';
                 icon.textContent = '▶';
+                document.getElementById('customNumpad').style.display = 'none';
             }
+        }
+        
+        // Show custom numpad
+        function showNumpad() {
+            document.getElementById('customNumpad').style.display = 'block';
+        }
+        
+        // Add digit to HRV input
+        function addDigit(digit) {
+            const input = document.getElementById('hrvInput');
+            const currentValue = input.value;
+            
+            // Limit to 3 digits (max HRV is usually under 200)
+            if (currentValue.length < 3) {
+                input.value = currentValue + digit;
+            }
+        }
+        
+        // Clear HRV input
+        function clearInput() {
+            document.getElementById('hrvInput').value = '';
+        }
+        
+        // Backspace function
+        function backspace() {
+            const input = document.getElementById('hrvInput');
+            input.value = input.value.slice(0, -1);
         }
         
         // HRV submission
@@ -538,8 +629,9 @@
                 
                 if (response.ok) {
                     input.value = '';
-                    // Hide the input container after successful save
+                    // Hide the input container and numpad after successful save
                     document.getElementById('hrvInputContainer').style.display = 'none';
+                    document.getElementById('customNumpad').style.display = 'none';
                     document.getElementById('hrvToggleIcon').textContent = '▶';
                     alert('HRV saved successfully!');
                     loadTodayData(); // Refresh today's data
