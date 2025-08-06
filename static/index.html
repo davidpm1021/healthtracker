@@ -200,54 +200,87 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* HRV Entry */
-        .hrv-entry {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 20px;
-            margin-top: auto;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .hrv-entry h3:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-        }
-        
-        #hrvToggleIcon {
-            font-size: 0.8em;
-            margin-left: 8px;
-            transition: transform 0.2s ease;
-        }
-
-        .hrv-input {
+        /* HRV Modal */
+        .hrv-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            font-size: 18px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .hrv-modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .hrv-modal-content h3 {
             text-align: center;
-            margin: 12px 0;
+            color: white;
+            margin-bottom: 24px;
+            font-size: 24px;
         }
-
-        .hrv-input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .hrv-btn {
+        
+        .hrv-display {
             width: 100%;
+            padding: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .hrv-display::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .hrv-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .hrv-save-btn, .hrv-cancel-btn {
             padding: 16px;
             border: none;
             border-radius: 12px;
-            background: #4CAF50;
-            color: white;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s ease;
+            transition: all 0.2s ease;
+        }
+        
+        .hrv-save-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .hrv-save-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .hrv-cancel-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .hrv-cancel-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
         
         /* Custom Numpad Styles */
@@ -298,9 +331,6 @@
             background: rgba(255, 149, 0, 0.4);
         }
 
-        .hrv-btn:hover {
-            background: #45a049;
-        }
 
         /* Swipe indicator */
         .swipe-indicator {
@@ -335,38 +365,36 @@
                             Loading...
                         </div>
                     </div>
-                    
-                    <div class="hrv-entry" id="hrvEntryBox">
-                        <h3 style="text-align: center; margin-bottom: 16px; cursor: pointer;" onclick="toggleHRVInput()">
-                            Enter HRV <span id="hrvToggleIcon">▶</span>
-                        </h3>
-                        <div id="hrvInputContainer" style="display: none;">
-                            <input 
-                                type="text" 
-                                class="hrv-input" 
-                                id="hrvInput" 
-                                placeholder="Enter HRV value (ms)"
-                                readonly
-                                onclick="showNumpad()"
-                                style="cursor: pointer;"
-                            >
-                            <div id="customNumpad" style="display: none; margin-top: 16px;">
-                                <div class="numpad-grid">
-                                    <button class="numpad-btn" onclick="addDigit('1')">1</button>
-                                    <button class="numpad-btn" onclick="addDigit('2')">2</button>
-                                    <button class="numpad-btn" onclick="addDigit('3')">3</button>
-                                    <button class="numpad-btn" onclick="addDigit('4')">4</button>
-                                    <button class="numpad-btn" onclick="addDigit('5')">5</button>
-                                    <button class="numpad-btn" onclick="addDigit('6')">6</button>
-                                    <button class="numpad-btn" onclick="addDigit('7')">7</button>
-                                    <button class="numpad-btn" onclick="addDigit('8')">8</button>
-                                    <button class="numpad-btn" onclick="addDigit('9')">9</button>
-                                    <button class="numpad-btn clear-btn" onclick="clearInput()">Clear</button>
-                                    <button class="numpad-btn" onclick="addDigit('0')">0</button>
-                                    <button class="numpad-btn backspace-btn" onclick="backspace()">⌫</button>
-                                </div>
-                            </div>
-                            <button class="hrv-btn" onclick="submitHRV()">Save HRV</button>
+                </div>
+                
+                <!-- HRV Entry Modal -->
+                <div id="hrvModal" class="hrv-modal" style="display: none;">
+                    <div class="hrv-modal-content">
+                        <h3>Enter Today's HRV</h3>
+                        <input 
+                            type="text" 
+                            class="hrv-display" 
+                            id="hrvInput" 
+                            placeholder="0"
+                            readonly
+                        >
+                        <div class="numpad-grid">
+                            <button class="numpad-btn" onclick="addDigit('1')">1</button>
+                            <button class="numpad-btn" onclick="addDigit('2')">2</button>
+                            <button class="numpad-btn" onclick="addDigit('3')">3</button>
+                            <button class="numpad-btn" onclick="addDigit('4')">4</button>
+                            <button class="numpad-btn" onclick="addDigit('5')">5</button>
+                            <button class="numpad-btn" onclick="addDigit('6')">6</button>
+                            <button class="numpad-btn" onclick="addDigit('7')">7</button>
+                            <button class="numpad-btn" onclick="addDigit('8')">8</button>
+                            <button class="numpad-btn" onclick="addDigit('9')">9</button>
+                            <button class="numpad-btn clear-btn" onclick="clearInput()">Clear</button>
+                            <button class="numpad-btn" onclick="addDigit('0')">0</button>
+                            <button class="numpad-btn backspace-btn" onclick="backspace()">⌫</button>
+                        </div>
+                        <div class="hrv-actions">
+                            <button class="hrv-save-btn" onclick="submitHRV()">Save</button>
+                            <button class="hrv-cancel-btn" onclick="closeHRVModal()">Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -559,26 +587,16 @@
             console.log('Charts initialized for period:', currentPeriod);
         }
         
-        // Toggle HRV input visibility
-        function toggleHRVInput() {
-            const container = document.getElementById('hrvInputContainer');
-            const icon = document.getElementById('hrvToggleIcon');
-            
-            if (container.style.display === 'none') {
-                container.style.display = 'block';
-                icon.textContent = '▼';
-                // Show numpad automatically when opened
-                showNumpad();
-            } else {
-                container.style.display = 'none';
-                icon.textContent = '▶';
-                document.getElementById('customNumpad').style.display = 'none';
-            }
+        // Open HRV Modal
+        function openHRVModal() {
+            document.getElementById('hrvModal').style.display = 'flex';
+            document.getElementById('hrvInput').value = '';
         }
         
-        // Show custom numpad
-        function showNumpad() {
-            document.getElementById('customNumpad').style.display = 'block';
+        // Close HRV Modal
+        function closeHRVModal() {
+            document.getElementById('hrvModal').style.display = 'none';
+            document.getElementById('hrvInput').value = '';
         }
         
         // Add digit to HRV input
@@ -628,13 +646,8 @@
                 });
                 
                 if (response.ok) {
-                    input.value = '';
-                    // Hide the input container and numpad after successful save
-                    document.getElementById('hrvInputContainer').style.display = 'none';
-                    document.getElementById('customNumpad').style.display = 'none';
-                    document.getElementById('hrvToggleIcon').textContent = '▶';
-                    alert('HRV saved successfully!');
-                    loadTodayData(); // Refresh today's data
+                    closeHRVModal();
+                    loadTodayData(); // Refresh today's data to show new HRV value
                 } else {
                     alert('Error saving HRV. Please try again.');
                 }

@@ -25,20 +25,54 @@ router = APIRouter()
 @router.get("/today", response_class=HTMLResponse)
 async def get_today_view():
     """
-    Get simplified today view component.
+    Get simplified today view with metric cards.
     """
     try:
-        # Load the simplified today component
-        component_path = Path("static/components/today-simple.html")
-        if component_path.exists():
-            return component_path.read_text()
+        db = DatabaseManager()
+        today = date.today().isoformat()
+        
+        # Get today's data for our 4 key metrics
+        cards_html = []
+        
+        # Steps card
+        steps_data = db.get_daily_summaries_for_metric("steps", today, today)
+        steps_value = steps_data[0]['value'] if steps_data and steps_data[0]['value'] else 0
+        cards_html.append(_generate_simple_metric_card("Steps", f"{steps_value:,.0f}", "steps", "👟", "#4CAF50"))
+        
+        # Weight card (convert kg to lbs)
+        weight_data = db.get_daily_summaries_for_metric("weight", today, today)
+        if weight_data and weight_data[0]['value']:
+            weight_lbs = weight_data[0]['value'] * 2.20462
+            weight_display = f"{weight_lbs:.1f}"
         else:
-            # Fallback to basic layout
-            return _generate_simple_today_view()
+            weight_display = "--"
+        cards_html.append(_generate_simple_metric_card("Weight", weight_display, "lbs", "⚖️", "#FF9800"))
+        
+        # Sleeping HR card
+        hr_data = db.get_daily_summaries_for_metric("sleeping_hr", today, today)
+        hr_value = hr_data[0]['value'] if hr_data and hr_data[0]['value'] else 0
+        hr_display = f"{hr_value:.0f}" if hr_value else "--"
+        cards_html.append(_generate_simple_metric_card("Sleeping HR", hr_display, "bpm", "❤️", "#F44336"))
+        
+        # HRV card (manual entry) - clickable to add entry
+        hrv_entry = db.get_manual_entry(today, "hrv")
+        hrv_value = hrv_entry['value'] if hrv_entry and hrv_entry['value'] else 0
+        hrv_display = f"{hrv_value:.0f}" if hrv_value else "Tap to enter"
+        # Add special HRV card with onclick
+        hrv_card = f"""
+        <div class="metric-card" onclick="openHRVModal()" style="cursor: pointer;">
+            <div class="metric-icon" style="color: #9C27B0;">💓</div>
+            <div class="metric-value" style="color: #9C27B0;">{hrv_display}</div>
+            <div class="metric-label">HRV {'ms' if hrv_value else ''}</div>
+        </div>
+        """
+        cards_html.append(hrv_card)
+        
+        return "\n".join(cards_html)
         
     except Exception as e:
-        logger.error(f"Error loading today view component: {e}")
-        return _generate_error_card("Failed to load today's view")
+        logger.error(f"Error loading today view: {e}")
+        return _generate_error_card("Failed to load today's data")
 
 
 @router.get("/today/primary", response_class=HTMLResponse)
@@ -506,6 +540,62 @@ async def get_goals_view():
         return _generate_error_card("Failed to load goals")
 
 
+@router.get("/charts", response_class=HTMLResponse)
+async def get_charts_view():
+    """
+    Get charts view for dashboard with period support.
+    """
+    try:
+        db = DatabaseManager()
+        today = date.today()
+        
+        # Get date ranges for weekly view (default)
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+        start_date = start_of_week.isoformat()
+        end_date = end_of_week.isoformat()
+        
+        # Generate chart HTML for all 4 metrics
+        charts_html = []
+        
+        # Steps chart
+        steps_data = db.get_daily_summaries_for_metric("steps", start_date, end_date)
+        if steps_data:
+            charts_html.append(_generate_simple_chart("Steps", steps_data, "steps", "#4CAF50"))
+        
+        # Weight chart (convert kg to lbs for display)
+        weight_data = db.get_daily_summaries_for_metric("weight", start_date, end_date)
+        if weight_data:
+            # Convert kg to lbs for display
+            for entry in weight_data:
+                if entry['value']:
+                    entry['value'] = entry['value'] * 2.20462
+            charts_html.append(_generate_simple_chart("Weight", weight_data, "lbs", "#FF9800"))
+        
+        # Sleeping HR chart
+        hr_data = db.get_daily_summaries_for_metric("sleeping_hr", start_date, end_date)
+        if hr_data:
+            charts_html.append(_generate_simple_chart("Sleeping HR", hr_data, "bpm", "#F44336"))
+        
+        # HRV chart (from manual entries)
+        hrv_entries = db.get_manual_entries("hrv", start_date, end_date)
+        if hrv_entries:
+            # Convert manual entries to chart format
+            hrv_chart_data = []
+            for entry in hrv_entries:
+                hrv_chart_data.append({
+                    'date': entry['date'],
+                    'value': entry['value']
+                })
+            charts_html.append(_generate_simple_chart("HRV", hrv_chart_data, "ms", "#9C27B0"))
+        
+        return "\n".join(charts_html) if charts_html else '<div class="loading">No chart data available</div>'
+        
+    except Exception as e:
+        logger.error(f"Error generating charts view: {e}")
+        return _generate_error_card("Failed to load charts")
+
+
 @router.get("/manual-entry-form/{metric_type}", response_class=HTMLResponse)
 async def get_manual_entry_form(
     metric_type: str):
@@ -664,6 +754,90 @@ async def get_manual_entry_form(
 
 
 # Helper functions for generating HTML
+
+def _generate_simple_metric_card(name: str, value: str, unit: str, icon: str, color: str) -> str:
+    """Generate a simple metric card for today view"""
+    return f"""
+    <div class="metric-card">
+        <div class="metric-icon" style="color: {color};">{icon}</div>
+        <div class="metric-value" style="color: {color};">{value}</div>
+        <div class="metric-label">{name} {unit}</div>
+    </div>
+    """
+
+
+def _generate_simple_chart(title: str, data: List[Dict], unit: str, color: str) -> str:
+    """Generate a simple chart card with Chart.js"""
+    if not data:
+        return f"""
+        <div class="chart-card">
+            <div class="chart-title">{title}</div>
+            <div style="padding: 40px; text-align: center; color: rgba(255,255,255,0.6);">
+                No data available
+            </div>
+        </div>
+        """
+    
+    # Prepare data for Chart.js
+    labels = []
+    values = []
+    for entry in data:
+        date_obj = datetime.fromisoformat(entry['date'])
+        labels.append(date_obj.strftime('%a'))  # Mon, Tue, etc
+        values.append(entry['value'] or 0)
+    
+    chart_id = f"chart-{title.lower().replace(' ', '-')}"
+    
+    return f"""
+    <div class="chart-card">
+        <div class="chart-title">{title}</div>
+        <canvas id="{chart_id}" style="width: 100%; height: 200px;"></canvas>
+        <script>
+        (function() {{
+            const ctx = document.getElementById('{chart_id}');
+            if (ctx && typeof Chart !== 'undefined') {{
+                new Chart(ctx, {{
+                    type: 'line',
+                    data: {{
+                        labels: {labels},
+                        datasets: [{{
+                            data: {values},
+                            borderColor: '{color}',
+                            backgroundColor: '{color}20',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: '{color}',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 4
+                        }}]
+                    }},
+                    options: {{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {{
+                            legend: {{ display: false }}
+                        }},
+                        scales: {{
+                            y: {{
+                                beginAtZero: {str(title == 'Steps').lower()},
+                                grid: {{ color: 'rgba(255,255,255,0.1)' }},
+                                ticks: {{ color: 'rgba(255,255,255,0.7)' }}
+                            }},
+                            x: {{
+                                grid: {{ color: 'rgba(255,255,255,0.1)' }},
+                                ticks: {{ color: 'rgba(255,255,255,0.7)' }}
+                            }}
+                        }}
+                    }}
+                }});
+            }}
+        }})();
+        </script>
+    </div>
+    """
+
 
 def _generate_enhanced_metric_card(template: str, metric: str, data: Optional[Dict], is_manual: bool = False) -> str:
     """
