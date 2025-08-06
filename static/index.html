@@ -333,11 +333,11 @@
         }
 
         .metric-display {
-            margin-bottom: 3rem;
+            margin-bottom: 1.5rem;
         }
 
         .current-value {
-            font-size: 6rem;
+            font-size: 3.5rem;
             font-weight: bold;
             line-height: 1;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -348,21 +348,21 @@
         }
 
         .metric-unit {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             color: rgba(255, 255, 255, 0.7);
             font-weight: 300;
         }
 
         .progress-chart {
-            margin: 3rem 0;
+            margin: 1.5rem 0;
             display: flex;
             justify-content: center;
         }
 
         .progress-chart canvas {
-            max-width: 100%;
+            max-width: 90%;
             height: auto;
-            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+            filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
         }
 
         .motivation-text {
@@ -801,7 +801,7 @@
         let screensaverActive = false;
         let currentMetricIndex = 0;
         const screensaverDelay = 30000; // 30 seconds of inactivity
-        const metricCycleTime = 8000; // 8 seconds per metric
+        const metricCycleTime = 15000; // 15 seconds per metric
 
         const metrics = [
             {
@@ -882,7 +882,7 @@
                         <div class="metric-unit">${metric.unit}</div>
                     </div>
                     <div class="progress-chart">
-                        <canvas id="screensaver-chart" width="600" height="300"></canvas>
+                        <canvas id="screensaver-chart" width="500" height="220"></canvas>
                     </div>
                     <div class="motivation-text">
                         <div class="progress-indicator">${generateProgressText(metric)}</div>
@@ -926,30 +926,61 @@
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Generate mock trend data
-            const dataPoints = generateTrendData(metric, 14); // 14 days
-            const maxY = Math.max(...dataPoints) * 1.1;
-            const minY = Math.min(...dataPoints) * 0.9;
+            // Chart area with margins for labels
+            const margin = 40;
+            const chartWidth = canvas.width - (margin * 2);
+            const chartHeight = canvas.height - (margin * 2);
+            const chartX = margin;
+            const chartY = margin;
             
-            // Draw grid
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            // Generate mock trend data
+            const dataPoints = generateTrendData(metric, 7); // 7 days for better visibility
+            const maxY = Math.max(...dataPoints);
+            const minY = Math.min(...dataPoints);
+            const range = maxY - minY;
+            
+            // Ensure some range for flat data
+            const adjustedMax = range < 1 ? maxY + 1 : maxY;
+            const adjustedMin = range < 1 ? minY - 1 : minY;
+            const adjustedRange = adjustedMax - adjustedMin;
+            
+            // Draw grid lines and Y-axis labels
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
             ctx.lineWidth = 1;
-            for (let i = 1; i < 5; i++) {
-                const y = (canvas.height / 5) * i;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'right';
+            
+            for (let i = 0; i <= 4; i++) {
+                const y = chartY + (chartHeight / 4) * i;
+                const value = adjustedMax - (adjustedRange / 4) * i;
+                
+                // Grid line
                 ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
+                ctx.moveTo(chartX, y);
+                ctx.lineTo(chartX + chartWidth, y);
                 ctx.stroke();
+                
+                // Y-axis label
+                ctx.fillText(Math.round(value), chartX - 10, y + 5);
             }
+            
+            // Draw X-axis labels (days)
+            ctx.textAlign = 'center';
+            const days = ['7d', '6d', '5d', '4d', '3d', '2d', 'Today'];
+            dataPoints.forEach((point, i) => {
+                const x = chartX + (chartWidth / (dataPoints.length - 1)) * i;
+                ctx.fillText(days[i] || `${7-i}d`, x, chartY + chartHeight + 25);
+            });
             
             // Draw trend line
             ctx.strokeStyle = metric.color;
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 3;
             ctx.beginPath();
             
             dataPoints.forEach((point, i) => {
-                const x = (canvas.width / (dataPoints.length - 1)) * i;
-                const y = canvas.height - ((point - minY) / (maxY - minY)) * canvas.height;
+                const x = chartX + (chartWidth / (dataPoints.length - 1)) * i;
+                const y = chartY + chartHeight - ((point - adjustedMin) / adjustedRange) * chartHeight;
                 
                 if (i === 0) {
                     ctx.moveTo(x, y);
@@ -960,16 +991,30 @@
             
             ctx.stroke();
             
-            // Draw data points
+            // Draw data points with values
             ctx.fillStyle = metric.color;
+            ctx.textAlign = 'center';
+            ctx.font = '12px Arial';
+            
             dataPoints.forEach((point, i) => {
-                const x = (canvas.width / (dataPoints.length - 1)) * i;
-                const y = canvas.height - ((point - minY) / (maxY - minY)) * canvas.height;
+                const x = chartX + (chartWidth / (dataPoints.length - 1)) * i;
+                const y = chartY + chartHeight - ((point - adjustedMin) / adjustedRange) * chartHeight;
                 
+                // Data point circle
                 ctx.beginPath();
-                ctx.arc(x, y, 6, 0, Math.PI * 2);
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
                 ctx.fill();
+                
+                // Value label above point
+                ctx.fillStyle = 'white';
+                ctx.fillText(Math.round(point), x, y - 10);
+                ctx.fillStyle = metric.color;
             });
+            
+            // Draw chart border
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(chartX, chartY, chartWidth, chartHeight);
         }
 
         function generateTrendData(metric, days) {
