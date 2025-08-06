@@ -287,6 +287,115 @@
         .hrv-cancel-btn:hover {
             background: rgba(255, 255, 255, 0.3);
         }
+
+        /* Screensaver Mode */
+        .screensaver {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .screensaver.active {
+            opacity: 1;
+        }
+
+        .screensaver-content {
+            text-align: center;
+            color: white;
+            max-width: 90%;
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        .screensaver-metric {
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        .screensaver-metric.visible {
+            opacity: 1;
+        }
+
+        .metric-title {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 2rem;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: 2px;
+        }
+
+        .metric-display {
+            margin-bottom: 3rem;
+        }
+
+        .current-value {
+            font-size: 6rem;
+            font-weight: bold;
+            line-height: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-unit {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 300;
+        }
+
+        .progress-chart {
+            margin: 3rem 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .progress-chart canvas {
+            max-width: 100%;
+            height: auto;
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+        }
+
+        .motivation-text {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .progress-indicator {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #4CAF50;
+        }
+
+        .progress-indicator.negative {
+            color: #FF6B6B;
+        }
+
+        .progress-indicator.neutral {
+            color: #FFD93D;
+        }
+
+        .zone-indicator {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-style: italic;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         
         /* Custom Numpad Styles - Compact for 7" screen */
         .numpad-grid {
@@ -376,6 +485,26 @@
                     </div>
                 </div>
                 
+                <!-- Screensaver Mode -->
+                <div id="screensaver" class="screensaver" style="display: none;">
+                    <div class="screensaver-content">
+                        <div id="screensaver-metric" class="screensaver-metric">
+                            <div class="metric-title">Steps Progress</div>
+                            <div class="metric-display">
+                                <div class="current-value">8,247</div>
+                                <div class="metric-unit">steps today</div>
+                            </div>
+                            <div class="progress-chart">
+                                <canvas id="screensaver-chart" width="400" height="200"></canvas>
+                            </div>
+                            <div class="motivation-text">
+                                <div class="progress-indicator">↗ +12% vs last week</div>
+                                <div class="zone-indicator">Above target zone</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- HRV Entry Modal -->
                 <div id="hrvModal" class="hrv-modal" style="display: none;">
                     <div class="hrv-modal-content">
@@ -667,9 +796,236 @@
         }
         
         // Initialize app
+        // Screensaver functionality
+        let screensaverTimeout;
+        let screensaverActive = false;
+        let currentMetricIndex = 0;
+        const screensaverDelay = 30000; // 30 seconds of inactivity
+        const metricCycleTime = 8000; // 8 seconds per metric
+
+        const metrics = [
+            {
+                name: 'Steps Progress',
+                color: '#4CAF50',
+                icon: '👟',
+                unit: 'steps today',
+                target: 8000,
+                optimalZone: 'Above target'
+            },
+            {
+                name: 'Weight Trend',
+                color: '#FF9800', 
+                icon: '⚖️',
+                unit: 'lbs',
+                target: 165,
+                optimalZone: 'In healthy range'
+            },
+            {
+                name: 'Heart Rate',
+                color: '#F44336',
+                icon: '❤️',
+                unit: 'bpm resting',
+                target: 65,
+                optimalZone: 'Optimal zone'
+            },
+            {
+                name: 'HRV Recovery',
+                color: '#9C27B0',
+                icon: '💓',
+                unit: 'ms',
+                target: 45,
+                optimalZone: 'Recovery ready'
+            }
+        ];
+
+        function resetScreensaverTimer() {
+            clearTimeout(screensaverTimeout);
+            if (screensaverActive) {
+                exitScreensaver();
+            }
+            screensaverTimeout = setTimeout(enterScreensaver, screensaverDelay);
+        }
+
+        function enterScreensaver() {
+            screensaverActive = true;
+            currentMetricIndex = 0;
+            document.getElementById('screensaver').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('screensaver').classList.add('active');
+                showMetric(0);
+                startMetricCycle();
+            }, 100);
+        }
+
+        function exitScreensaver() {
+            screensaverActive = false;
+            document.getElementById('screensaver').classList.remove('active');
+            setTimeout(() => {
+                document.getElementById('screensaver').style.display = 'none';
+            }, 1000);
+            clearInterval(window.metricCycleInterval);
+        }
+
+        function showMetric(index) {
+            const metric = metrics[index];
+            const metricElement = document.getElementById('screensaver-metric');
+            
+            // Fade out
+            metricElement.classList.remove('visible');
+            
+            setTimeout(() => {
+                // Update content
+                metricElement.innerHTML = `
+                    <div class="metric-title">${metric.name}</div>
+                    <div class="metric-display">
+                        <div class="current-value">${generateMockValue(metric)}</div>
+                        <div class="metric-unit">${metric.unit}</div>
+                    </div>
+                    <div class="progress-chart">
+                        <canvas id="screensaver-chart" width="600" height="300"></canvas>
+                    </div>
+                    <div class="motivation-text">
+                        <div class="progress-indicator">${generateProgressText(metric)}</div>
+                        <div class="zone-indicator">${metric.optimalZone}</div>
+                    </div>
+                `;
+                
+                // Draw chart
+                drawMetricChart(metric, index);
+                
+                // Fade in
+                metricElement.classList.add('visible');
+            }, 750);
+        }
+
+        function generateMockValue(metric) {
+            // Generate realistic current values
+            switch (metric.name) {
+                case 'Steps Progress': return '8,247';
+                case 'Weight Trend': return '167.2';
+                case 'Heart Rate': return '62';
+                case 'HRV Recovery': return '48';
+                default: return '---';
+            }
+        }
+
+        function generateProgressText(metric) {
+            const progressTexts = [
+                '↗ +12% vs last week',
+                '↘ -2.1 lbs this month',
+                '↗ Improving recovery', 
+                '↗ +8% higher than average'
+            ];
+            return progressTexts[Math.floor(Math.random() * progressTexts.length)];
+        }
+
+        function drawMetricChart(metric, index) {
+            const canvas = document.getElementById('screensaver-chart');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Generate mock trend data
+            const dataPoints = generateTrendData(metric, 14); // 14 days
+            const maxY = Math.max(...dataPoints) * 1.1;
+            const minY = Math.min(...dataPoints) * 0.9;
+            
+            // Draw grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            for (let i = 1; i < 5; i++) {
+                const y = (canvas.height / 5) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Draw trend line
+            ctx.strokeStyle = metric.color;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            
+            dataPoints.forEach((point, i) => {
+                const x = (canvas.width / (dataPoints.length - 1)) * i;
+                const y = canvas.height - ((point - minY) / (maxY - minY)) * canvas.height;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            
+            ctx.stroke();
+            
+            // Draw data points
+            ctx.fillStyle = metric.color;
+            dataPoints.forEach((point, i) => {
+                const x = (canvas.width / (dataPoints.length - 1)) * i;
+                const y = canvas.height - ((point - minY) / (maxY - minY)) * canvas.height;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function generateTrendData(metric, days) {
+            const data = [];
+            let baseValue;
+            
+            switch (metric.name) {
+                case 'Steps Progress':
+                    baseValue = 7500;
+                    for (let i = 0; i < days; i++) {
+                        data.push(baseValue + Math.random() * 3000 - 500 + (i * 50)); // Upward trend
+                    }
+                    break;
+                case 'Weight Trend':
+                    baseValue = 170;
+                    for (let i = 0; i < days; i++) {
+                        data.push(baseValue - (i * 0.2) + (Math.random() - 0.5)); // Downward trend
+                    }
+                    break;
+                case 'Heart Rate':
+                    baseValue = 68;
+                    for (let i = 0; i < days; i++) {
+                        data.push(baseValue - (i * 0.3) + Math.random() * 4 - 2); // Slight downward
+                    }
+                    break;
+                case 'HRV Recovery':
+                    baseValue = 42;
+                    for (let i = 0; i < days; i++) {
+                        data.push(baseValue + (i * 0.4) + Math.random() * 6 - 3); // Upward trend
+                    }
+                    break;
+            }
+            return data;
+        }
+
+        function startMetricCycle() {
+            window.metricCycleInterval = setInterval(() => {
+                if (screensaverActive) {
+                    currentMetricIndex = (currentMetricIndex + 1) % metrics.length;
+                    showMetric(currentMetricIndex);
+                }
+            }, metricCycleTime);
+        }
+
+        // Event listeners to reset screensaver timer
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+            document.addEventListener(event, resetScreensaverTimer, true);
+        });
+
+        // Click anywhere on screensaver to exit
+        document.getElementById('screensaver').addEventListener('click', exitScreensaver);
+
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('App initialized with Hammer.js');
+            console.log('App initialized with Hammer.js and Screensaver');
             loadTodayData();
+            resetScreensaverTimer(); // Start screensaver timer
         });
         
         // Debug touch events
