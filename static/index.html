@@ -293,15 +293,20 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            z-index: 2000;
+            z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
             transition: opacity 1s ease-in-out;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         .screensaver.active {
@@ -311,8 +316,14 @@
         .screensaver-content {
             text-align: center;
             color: white;
-            max-width: 90%;
+            max-width: 85%;
+            max-height: 85%;
+            padding: 40px 20px;
             animation: fadeIn 2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
         .screensaver-metric {
@@ -325,9 +336,9 @@
         }
 
         .metric-title {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 300;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             color: rgba(255, 255, 255, 0.9);
             letter-spacing: 2px;
         }
@@ -337,7 +348,7 @@
         }
 
         .current-value {
-            font-size: 3.5rem;
+            font-size: 3rem;
             font-weight: bold;
             line-height: 1;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -709,7 +720,13 @@
             container.innerHTML = '<div class="loading"><div class="spinner"></div>Loading charts...</div>';
             
             try {
-                const response = await fetch(`/api/ui/charts?period=${period}`);
+                const response = await fetch(`/api/ui/charts?period=${period}&t=${Date.now()}`, {
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
                 const html = await response.text();
                 container.innerHTML = html;
                 
@@ -846,9 +863,19 @@
             screensaverTimeout = setTimeout(enterScreensaver, screensaverDelay);
         }
 
-        function enterScreensaver() {
+        async function enterScreensaver() {
             screensaverActive = true;
             currentMetricIndex = 0;
+            
+            // Fetch real trend data
+            try {
+                const response = await fetch('/api/screensaver/trends');
+                window.realTrendData = await response.json();
+            } catch (error) {
+                console.error('Failed to fetch trend data:', error);
+                window.realTrendData = null;
+            }
+            
             document.getElementById('screensaver').style.display = 'flex';
             setTimeout(() => {
                 document.getElementById('screensaver').classList.add('active');
@@ -878,15 +905,15 @@
                 metricElement.innerHTML = `
                     <div class="metric-title">${metric.name}</div>
                     <div class="metric-display">
-                        <div class="current-value">${generateMockValue(metric)}</div>
+                        <div class="current-value">${getRealValue(metric.name)}</div>
                         <div class="metric-unit">${metric.unit}</div>
                     </div>
                     <div class="progress-chart">
-                        <canvas id="screensaver-chart" width="500" height="220"></canvas>
+                        <canvas id="screensaver-chart" width="450" height="180"></canvas>
                     </div>
                     <div class="motivation-text">
-                        <div class="progress-indicator">${generateProgressText(metric)}</div>
-                        <div class="zone-indicator">${metric.optimalZone}</div>
+                        <div class="progress-indicator">${getRealProgressText(metric.name)}</div>
+                        <div class="zone-indicator">${getRealZoneText(metric.name)}</div>
                     </div>
                 `;
                 
@@ -898,25 +925,90 @@
             }, 750);
         }
 
-        function generateMockValue(metric) {
-            // Generate realistic current values
-            switch (metric.name) {
-                case 'Steps Progress': return '8,247';
-                case 'Weight Trend': return '167.2';
-                case 'Heart Rate': return '62';
-                case 'HRV Recovery': return '48';
-                default: return '---';
+        function getRealValue(metricName) {
+            if (!window.realTrendData) return '---';
+            
+            const mapping = {
+                'Steps Progress': 'steps',
+                'Weight Trend': 'weight', 
+                'Heart Rate': 'heart_rate',
+                'HRV Recovery': 'hrv'
+            };
+            
+            const key = mapping[metricName];
+            const data = window.realTrendData[key];
+            
+            if (!data || !data.current) return '---';
+            
+            if (metricName === 'Steps Progress') {
+                return data.current.toLocaleString();
             }
+            
+            return data.current.toString();
         }
 
-        function generateProgressText(metric) {
-            const progressTexts = [
-                '↗ +12% vs last week',
-                '↘ -2.1 lbs this month',
-                '↗ Improving recovery', 
-                '↗ +8% higher than average'
-            ];
-            return progressTexts[Math.floor(Math.random() * progressTexts.length)];
+        function getRealProgressText(metricName) {
+            if (!window.realTrendData) return 'Loading data...';
+            
+            const mapping = {
+                'Steps Progress': 'steps',
+                'Weight Trend': 'weight', 
+                'Heart Rate': 'heart_rate',
+                'HRV Recovery': 'hrv'
+            };
+            
+            const key = mapping[metricName];
+            const data = window.realTrendData[key];
+            
+            return data?.progress || 'No recent data';
+        }
+
+        function getRealZoneText(metricName) {
+            if (!window.realTrendData) return 'Analyzing...';
+            
+            const mapping = {
+                'Steps Progress': 'steps',
+                'Weight Trend': 'weight', 
+                'Heart Rate': 'heart_rate',
+                'HRV Recovery': 'hrv'
+            };
+            
+            const key = mapping[metricName];
+            const data = window.realTrendData[key];
+            
+            return data?.zone || 'No data';
+        }
+
+        function getRealTrendData(metricName, days) {
+            if (!window.realTrendData) {
+                // Fallback to mock data if real data not available
+                return generateTrendData({name: metricName}, days);
+            }
+            
+            const mapping = {
+                'Steps Progress': 'steps',
+                'Weight Trend': 'weight', 
+                'Heart Rate': 'heart_rate',
+                'HRV Recovery': 'hrv'
+            };
+            
+            const key = mapping[metricName];
+            const data = window.realTrendData[key];
+            
+            if (!data || !data.data || data.data.length === 0) {
+                // Fallback to mock data if no real data
+                return generateTrendData({name: metricName}, days);
+            }
+            
+            // Use real data, pad with mock if insufficient days
+            const realData = [...data.data];
+            while (realData.length < days) {
+                // Pad beginning with estimated values based on trend
+                const trend = realData.length > 1 ? realData[1] - realData[0] : 0;
+                realData.unshift(realData[0] - trend);
+            }
+            
+            return realData.slice(-days); // Take last 'days' entries
         }
 
         function drawMetricChart(metric, index) {
@@ -933,8 +1025,8 @@
             const chartX = margin;
             const chartY = margin;
             
-            // Generate mock trend data
-            const dataPoints = generateTrendData(metric, 7); // 7 days for better visibility
+            // Get real trend data
+            const dataPoints = getRealTrendData(metric.name, 7); // 7 days for better visibility
             const maxY = Math.max(...dataPoints);
             const minY = Math.min(...dataPoints);
             const range = maxY - minY;

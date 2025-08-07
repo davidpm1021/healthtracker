@@ -2,6 +2,14 @@
 
 This document provides the exact Tasker configuration for your mixed automated/manual health data workflow.
 
+## Important: JSON Format Compatibility
+
+The HealthTracker API accepts BOTH formats:
+- `"records"` array (shown in examples below) - automatically converted
+- `"data_points"` array (alternative format) - native format
+
+Both work equally well. Use whichever is easier for your Tasker setup.
+
 ## Overview
 
 Your workflow:
@@ -134,6 +142,15 @@ In Tasker, set up these variables:
 
 2. **%DATET** = Current date for timestamps
    - Formula: `%DATY-%DATM-%DATD`
+
+## Server Requirement
+
+Ensure the server is running on your Pi:
+```bash
+ssh davidpm@192.168.86.36
+cd /home/davidpm/healthtracker
+python3 start_server.py
+```
 
 ## Testing Steps
 

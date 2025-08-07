@@ -1,0 +1,33 @@
+[Unit]
+Description=HealthTracker FastAPI Server
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/healthtracker
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/home/pi/healthtracker"
+
+# Start command with proper error handling
+ExecStart=/usr/bin/python3 /home/pi/healthtracker/start_server.py
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=append:/var/log/healthtracker/server.log
+StandardError=append:/var/log/healthtracker/server-error.log
+
+# Security hardening
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/home/pi/healthtracker/healthtracker.db
+ReadWritePaths=/var/log/healthtracker
+
+[Install]
+WantedBy=multi-user.target

@@ -26,8 +26,7 @@ class DatabaseManager:
             # Verify tables exist
             self._verify_tables()
         
-        # Run goals system migration if needed
-        self._run_goals_migration()
+        # Goals migration removed for MVP
     
     def _create_database(self) -> None:
         """Create database from schema file."""
@@ -54,7 +53,7 @@ class DatabaseManager:
             if missing_tables:
                 raise RuntimeError(f"Missing database tables: {missing_tables}")
     
-    def _run_goals_migration(self) -> None:
+    def _run_goals_migration_old(self) -> None:
         """Run goals system migration if needed."""
         migration_path = Path(__file__).parent / "database" / "migrations" / "add_goals_tables.sql"
         
@@ -346,192 +345,6 @@ class DatabaseManager:
         return counts
 
 
-    # ====== GOALS AND STREAKS METHODS ======
-    
-    def create_goal(self, goal: NewGoal) -> int:
-        """Create a new goal and return its ID."""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO goals (goal_type, target_value, frequency, status, start_date, end_date, description)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                goal.goal_type,
-                goal.target_value,
-                goal.frequency,
-                goal.status,
-                goal.start_date.isoformat() if goal.start_date else None,
-                goal.end_date.isoformat() if goal.end_date else None,
-                goal.description
-            ))
-            return cursor.lastrowid
-    
-    def get_goal(self, goal_id: int) -> Optional[NewGoal]:
-        """Get a goal by ID."""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM goals WHERE id = ?", (goal_id,))
-            row = cursor.fetchone()
-            
-            if row:
-                return self._row_to_goal(row)
-        return None
-    
-    def get_goals(self, status: Optional[str] = None, goal_type: Optional[str] = None) -> List[NewGoal]:
-        """Get goals with optional filtering."""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            
-            query = "SELECT * FROM goals WHERE 1=1"
-            params = []
-            
-            if status:
-                query += " AND status = ?"
-                params.append(status)
-            
-            if goal_type:
-                query += " AND goal_type = ?"
-                params.append(goal_type)
-                
-            query += " ORDER BY created_date DESC"
-            
-            cursor.execute(query, params)
-            return [self._row_to_goal(row) for row in cursor.fetchall()]
-    
-    def update_goal(self, goal: NewGoal) -> bool:
-        """Update an existing goal."""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                UPDATE goals 
-                SET goal_type = ?, target_value = ?, frequency = ?, status = ?, 
-                    start_date = ?, end_date = ?, description = ?
-                WHERE id = ?
-            """, (
-                goal.goal_type,
-                goal.target_value,
-                goal.frequency,
-                goal.status,
-                goal.start_date.isoformat() if goal.start_date else None,
-                goal.end_date.isoformat() if goal.end_date else None,
-                goal.description,
-                goal.id
-            ))
-            return cursor.rowcount > 0
-    
-    def delete_goal(self, goal_id: int) -> bool:
-        """Delete a goal and its associated data."""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM goals WHERE id = ?", (goal_id,))
-            return cursor.rowcount > 0
-    
-    def get_streak(self, goal_id: int) -> Optional[Streak]:
-        """Get streak for a goal."""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM streaks WHERE goal_id = ?", (goal_id,))
-            row = cursor.fetchone()
-            
-            if row:
-                return self._row_to_streak(row)
-        return None
-    
-    def update_streak(self, streak: Streak) -> bool:
-        """Update a streak record."""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                UPDATE streaks 
-                SET current_count = ?, best_count = ?, last_achieved_date = ?, 
-                    is_active = ?, freeze_tokens_used = ?, last_updated = CURRENT_TIMESTAMP
-                WHERE id = ?
-            """, (
-                streak.current_count,
-                streak.best_count,
-                streak.last_achieved_date.isoformat() if streak.last_achieved_date else None,
-                streak.is_active,
-                streak.freeze_tokens_used,
-                streak.id
-            ))
-            return cursor.rowcount > 0
-    
-    def record_goal_achievement(self, achievement: GoalAchievement) -> int:
-        """Record a goal achievement."""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT OR REPLACE INTO goal_achievements 
-                (goal_id, achieved_date, actual_value, notes)
-                VALUES (?, ?, ?, ?)
-            """, (
-                achievement.goal_id,
-                achievement.achieved_date.isoformat() if achievement.achieved_date else None,
-                achievement.actual_value,
-                achievement.notes
-            ))
-            return cursor.lastrowid
-    
-    def get_available_freeze_tokens(self, streak_id: int) -> List[FreezeToken]:
-        """Get available freeze tokens for a streak."""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT * FROM freeze_tokens 
-                WHERE streak_id = ? AND is_used = FALSE AND expires_date >= CURRENT_DATE
-                ORDER BY issued_date
-            """, (streak_id,))
-            
-            return [self._row_to_freeze_token(row) for row in cursor.fetchall()]
-    
-    def use_freeze_token(self, token_id: int, used_date: date) -> bool:
-        """Mark a freeze token as used."""
-        with self.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                UPDATE freeze_tokens 
-                SET is_used = TRUE, used_date = ?
-                WHERE id = ? AND is_used = FALSE
-            """, (used_date.isoformat(), token_id))
-            return cursor.rowcount > 0
-    
-    def _row_to_goal(self, row) -> NewGoal:
-        """Convert database row to Goal object."""
-        return NewGoal(
-            id=row[0],
-            goal_type=row[1],
-            target_value=row[2],  
-            frequency=row[3],
-            status=row[4],
-            created_date=datetime.fromisoformat(row[5]).date() if row[5] else None,
-            start_date=datetime.fromisoformat(row[6]).date() if row[6] else None,
-            end_date=datetime.fromisoformat(row[7]).date() if row[7] else None,
-            description=row[8]
-        )
-    
-    def _row_to_streak(self, row) -> Streak:
-        """Convert database row to Streak object."""
-        return Streak(
-            id=row[0],
-            goal_id=row[1],
-            current_count=row[2],
-            best_count=row[3],
-            last_achieved_date=datetime.fromisoformat(row[4]).date() if row[4] else None,
-            last_updated=datetime.fromisoformat(row[5]) if row[5] else None,
-            is_active=bool(row[6]),
-            freeze_tokens_used=row[7]
-        )
-    
-    def _row_to_freeze_token(self, row) -> FreezeToken:
-        """Convert database row to FreezeToken object."""
-        return FreezeToken(
-            id=row[0],
-            streak_id=row[1],
-            issued_date=datetime.fromisoformat(row[2]).date() if row[2] else None,
-            used_date=datetime.fromisoformat(row[3]).date() if row[3] else None,
-            expires_date=datetime.fromisoformat(row[4]).date() if row[4] else None,
-            is_used=bool(row[5])
-        )
 
 
 def get_db_connection():

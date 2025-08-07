@@ -1,0 +1,10 @@
+[Unit]
+Description=Run HealthTracker Health Monitor every 15 minutes
+Requires=healthtracker-monitor.service
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15min
+
+[Install]
+WantedBy=timers.target

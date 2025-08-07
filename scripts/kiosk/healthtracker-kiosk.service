@@ -1,0 +1,52 @@
+[Unit]
+Description=HealthTracker Chromium Kiosk
+After=graphical.target healthtracker-server.service
+Wants=graphical.target healthtracker-server.service
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+Environment="DISPLAY=:0"
+Environment="XAUTHORITY=/home/pi/.Xauthority"
+
+# Wait for server to be ready
+ExecStartPre=/bin/bash -c 'until curl -s http://localhost:8000/health > /dev/null; do sleep 2; done'
+
+# Launch Chromium with all recommended flags
+ExecStart=/usr/bin/chromium-browser \
+    --kiosk http://localhost:8000/static/index.html \
+    --incognito \
+    --noerrdialogs \
+    --disable-infobars \
+    --disable-pinch \
+    --overscroll-history-navigation=0 \
+    --touch-events=enabled \
+    --enable-touch-drag-drop \
+    --disable-translate \
+    --no-first-run \
+    --disable-restore-session-state \
+    --disable-features=TranslateUI \
+    --disable-features=TouchpadOverscrollHistoryNavigation \
+    --check-for-update-interval=604800 \
+    --disable-component-update \
+    --autoplay-policy=no-user-gesture-required \
+    --window-size=1024,600 \
+    --window-position=0,0 \
+    --disable-dev-shm-usage \
+    --disable-gpu-sandbox \
+    --user-data-dir=/home/pi/.config/chromium-kiosk
+
+# Restart policy
+Restart=always
+RestartSec=5
+
+# Logging
+StandardOutput=append:/var/log/healthtracker/kiosk.log
+StandardError=append:/var/log/healthtracker/kiosk-error.log
+
+# Cleanup on stop
+ExecStop=/usr/bin/pkill -TERM chromium
+
+[Install]
+WantedBy=graphical.target

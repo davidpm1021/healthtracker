@@ -1,0 +1,16 @@
+[Unit]
+Description=HealthTracker Health Monitor
+After=healthtracker-server.service
+Wants=healthtracker-server.service
+
+[Service]
+Type=oneshot
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/healthtracker
+ExecStart=/bin/bash /home/pi/healthtracker/scripts/kiosk/monitor-health.sh
+StandardOutput=append:/var/log/healthtracker/monitor.log
+StandardError=append:/var/log/healthtracker/monitor-error.log
+
+[Install]
+WantedBy=multi-user.target
