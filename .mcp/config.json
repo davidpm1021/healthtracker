@@ -1,0 +1,9 @@
+﻿{
+  "mcpServers": {
+    "fs":    { "command": "mcp-filesystem", "args": ["--root","."] },
+    "git":   { "command": "mcp-git" },
+    "shell": { "command": "mcp-shell" },
+    "docker":{ "command": "mcp-docker" },
+    "http":  { "command": "mcp-http" }
+  }
+}
